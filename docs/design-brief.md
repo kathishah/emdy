@@ -76,6 +76,37 @@ Emdy should feel like it shipped with macOS. Native window management, standard 
 ### 4. Deliberately incomplete
 The feature list is the product strategy. A small set of reading controls is not a limitation — it's the point. Resist scope creep. The product's competitive advantage is what it *doesn't* do.
 
+## User Research: What Non-Technical People Say About Markdown
+
+Research from Reddit, Apple Community forums, Smashing Magazine, Hacker News, and other sources reveals consistent patterns in how non-technical users experience Markdown files.
+
+### Pain points
+
+**"I just see gibberish"** — When Quick Look or TextEdit opens a `.md` file, users see raw syntax — `# headings`, `**bold**`, pipe-delimited tables — and have no idea what they're looking at. As one Apple Community user put it, Quick Look shows "just a raw text file." Tables are especially bad: a grid of pipes and dashes that "makes no sense to anyone."
+
+**Every solution requires installing developer tools** — The advice non-technical users receive online is to install VS Code, Sublime Text, or Typora. These are power tools designed for developers. As MarkView's creator noted: "You can't expect friends or colleagues to buy an app just to read a document." VS Code, Obsidian, and Notion are "way too heavy for 'just open this file.'"
+
+**macOS has no native Markdown support** — Apple's built-in apps do not render Markdown. Quick Look shows plain text. There's no system-level Markdown preview without installing third-party extensions. Users on Apple Community forums describe multi-step workarounds: converting to HTML with pandoc, then opening in a browser — "which is pretty cumbersome."
+
+**Markdown syntax varies across tools and confuses even experienced users** — Smashing Magazine's analysis notes: "you can't necessarily take your muscle memory with you across these applications." Slack uses a different Markdown flavor than GitHub, which differs from Reddit. Knut Melvær observed that he has "observed people struggle with Markdown syntax, and be demotivated in their jobs as editors and content creators."
+
+**The problem is getting worse because of AI** — AI tools generate Markdown by default. ChatGPT, Claude, and Copilot all output `.md` files. This means more non-technical people are receiving Markdown documents from colleagues and automated workflows than ever before. The format is spreading faster than the tools to read it.
+
+### Workarounds people currently use
+- Right-click > Open With > Notepad/TextEdit (reads the raw syntax, not rendered)
+- Install a Quick Look extension like QLMarkDown or Markdown Preview
+- Paste into an online Markdown viewer (privacy concern, breaks workflow)
+- Ask the sender to convert to PDF first
+- Install VS Code or Typora (overkill for reading)
+- Use pandoc on the command line to convert to HTML (requires technical knowledge)
+
+### What they wish existed
+- A way to double-click a `.md` file and read it like a PDF — formatted, clean, instant
+- Something as simple as Preview.app or Acrobat Reader, but for Markdown
+- A free, lightweight app that doesn't require learning an editor
+
+Sources: [Apple Community](https://discussions.apple.com/thread/255993123), [Apple Community (2)](https://discussions.apple.com/thread/250328223), [Microsoft Q&A](https://learn.microsoft.com/en-us/answers/questions/4212957/opening-files-in-markdown-format), [Smashing Magazine](https://www.smashingmagazine.com/2022/02/thoughts-on-markdown/), [Hugo Forums](https://discourse.gohugo.io/t/markdown-editor-for-non-technical-people/35422), [MarkView](https://markview.io/)
+
 ## Key Assumptions & Open Questions
 
 ### Assumptions we're betting on

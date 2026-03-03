@@ -9,7 +9,7 @@
       "name": "System Architecture",
       "width": 1100,
       "height": 820,
-      "fill": "#F8F9FA",
+      "fill": "#F5F2ED",
       "layout": "vertical",
       "gap": 20,
       "padding": 40,
@@ -18,9 +18,9 @@
           "type": "text",
           "id": "764tR",
           "name": "title",
-          "fill": "#1A1A2E",
+          "fill": "#2B2622",
           "content": "Emdy — System Architecture",
-          "fontFamily": "Inter",
+          "fontFamily": "IBM Plex Mono",
           "fontSize": 24,
           "fontWeight": "700"
         },
@@ -28,21 +28,22 @@
           "type": "text",
           "id": "pRQG1",
           "name": "subtitle",
-          "fill": "#6B7280",
+          "fill": "#7A7268",
           "content": "macOS Markdown Reader",
-          "fontFamily": "Inter",
-          "fontSize": 14
+          "fontFamily": "IBM Plex Mono",
+          "fontSize": 14,
+          "fontWeight": "normal"
         },
         {
           "type": "frame",
           "id": "mbdaS",
           "name": "Emdy.app",
           "width": "fill_container",
-          "fill": "#FFFFFF",
+          "fill": "#F5F2ED",
           "cornerRadius": 12,
           "stroke": {
             "thickness": 1,
-            "fill": "#E5E7EB"
+            "fill": "#D9D2C6"
           },
           "layout": "vertical",
           "gap": 16,
@@ -57,9 +58,9 @@
               "type": "text",
               "id": "s32kt",
               "name": "appLabel",
-              "fill": "#6B7280",
+              "fill": "#7A7268",
               "content": "Emdy.app",
-              "fontFamily": "Inter",
+              "fontFamily": "IBM Plex Mono",
               "fontSize": 13,
               "fontWeight": "600",
               "letterSpacing": 1
@@ -75,11 +76,11 @@
                   "type": "frame",
                   "id": "JpPRt",
                   "name": "App Shell",
-                  "fill": "#EEF2FF",
+                  "fill": "#ECF0F2",
                   "cornerRadius": 8,
                   "stroke": {
                     "thickness": 1,
-                    "fill": "#C7D2FE"
+                    "fill": "#B0C0C8"
                   },
                   "layout": "vertical",
                   "gap": 4,
@@ -93,9 +94,9 @@
                       "type": "text",
                       "id": "ZS1xP",
                       "name": "shellTitle",
-                      "fill": "#4338CA",
+                      "fill": "#5A6D7A",
                       "content": "App Shell & Routing",
-                      "fontFamily": "Inter",
+                      "fontFamily": "IBM Plex Mono",
                       "fontSize": 13,
                       "fontWeight": "600"
                     },
@@ -103,9 +104,9 @@
                       "type": "text",
                       "id": "gGXqn",
                       "name": "shellDesc",
-                      "fill": "#6366F1",
+                      "fill": "#6E8A9A",
                       "content": "Lifecycle · Windows · Menus · Open Recent",
-                      "fontFamily": "Inter",
+                      "fontFamily": "IBM Plex Mono",
                       "fontSize": 11,
                       "fontWeight": "normal"
                     }
@@ -128,7 +129,7 @@
                   "height": 20,
                   "iconFontName": "chevron-down",
                   "iconFontFamily": "lucide",
-                  "fill": "#9CA3AF"
+                  "fill": "#9C9488"
                 }
               ]
             },
@@ -144,11 +145,11 @@
                   "id": "3FIfI",
                   "name": "Document Manager",
                   "width": "fill_container",
-                  "fill": "#F0FDF4",
+                  "fill": "#F0F2EA",
                   "cornerRadius": 8,
                   "stroke": {
                     "thickness": 1,
-                    "fill": "#BBF7D0"
+                    "fill": "#C0C8A8"
                   },
                   "layout": "vertical",
                   "gap": 4,
@@ -162,9 +163,9 @@
                       "type": "text",
                       "id": "UTdlU",
                       "name": "docTitle",
-                      "fill": "#166534",
+                      "fill": "#5F6B2D",
                       "content": "Document Manager",
-                      "fontFamily": "Inter",
+                      "fontFamily": "IBM Plex Mono",
                       "fontSize": 13,
                       "fontWeight": "600"
                     },
@@ -172,9 +173,9 @@
                       "type": "text",
                       "id": "pNPBr",
                       "name": "docDesc",
-                      "fill": "#16A34A",
+                      "fill": "#736B1E",
                       "content": "File I/O · File Watching",
-                      "fontFamily": "Inter",
+                      "fontFamily": "IBM Plex Mono",
                       "fontSize": 11,
                       "fontWeight": "normal"
                     }
@@ -185,11 +186,11 @@
                   "id": "8w736",
                   "name": "Directory Browser",
                   "width": "fill_container",
-                  "fill": "#FFF7ED",
+                  "fill": "#F5EDE0",
                   "cornerRadius": 8,
                   "stroke": {
                     "thickness": 1,
-                    "fill": "#FED7AA"
+                    "fill": "#D9C4A0"
                   },
                   "layout": "vertical",
                   "gap": 4,
@@ -203,9 +204,9 @@
                       "type": "text",
                       "id": "BixG4",
                       "name": "dirTitle",
-                      "fill": "#9A3412",
+                      "fill": "#9E3A2A",
                       "content": "Directory Browser",
-                      "fontFamily": "Inter",
+                      "fontFamily": "IBM Plex Mono",
                       "fontSize": 13,
                       "fontWeight": "600"
                     },
@@ -213,9 +214,9 @@
                       "type": "text",
                       "id": "LR1Ge",
                       "name": "dirDesc",
-                      "fill": "#EA580C",
+                      "fill": "#ED8008",
                       "content": "Sidebar · File List",
-                      "fontFamily": "Inter",
+                      "fontFamily": "IBM Plex Mono",
                       "fontSize": 11,
                       "fontWeight": "normal"
                     }
@@ -226,11 +227,11 @@
                   "id": "cgOfy",
                   "name": "Display Controls",
                   "width": "fill_container",
-                  "fill": "#FDF2F8",
+                  "fill": "#F2E8EC",
                   "cornerRadius": 8,
                   "stroke": {
                     "thickness": 1,
-                    "fill": "#FBCFE8"
+                    "fill": "#D4B0B8"
                   },
                   "layout": "vertical",
                   "gap": 4,
@@ -244,9 +245,9 @@
                       "type": "text",
                       "id": "6ftzl",
                       "name": "ctrlTitle",
-                      "fill": "#9D174D",
+                      "fill": "#7A5F6D",
                       "content": "Display Controls",
-                      "fontFamily": "Inter",
+                      "fontFamily": "IBM Plex Mono",
                       "fontSize": 13,
                       "fontWeight": "600"
                     },
@@ -254,9 +255,9 @@
                       "type": "text",
                       "id": "nRnNj",
                       "name": "ctrlDesc",
-                      "fill": "#DB2777",
+                      "fill": "#7A5F6D",
                       "content": "Font · Zoom · Preferences",
-                      "fontFamily": "Inter",
+                      "fontFamily": "IBM Plex Mono",
                       "fontSize": 11,
                       "fontWeight": "normal"
                     }
@@ -279,7 +280,7 @@
                   "height": 20,
                   "iconFontName": "chevron-down",
                   "iconFontFamily": "lucide",
-                  "fill": "#9CA3AF"
+                  "fill": "#9C9488"
                 }
               ]
             },
@@ -294,11 +295,11 @@
                   "type": "frame",
                   "id": "JRPxW",
                   "name": "Markdown Renderer",
-                  "fill": "#EFF6FF",
+                  "fill": "#ECF0F2",
                   "cornerRadius": 8,
                   "stroke": {
                     "thickness": 1,
-                    "fill": "#BFDBFE"
+                    "fill": "#B0C0C8"
                   },
                   "layout": "vertical",
                   "gap": 4,
@@ -312,9 +313,9 @@
                       "type": "text",
                       "id": "5E0sm",
                       "name": "rendTitle",
-                      "fill": "#1E40AF",
+                      "fill": "#3F5B6B",
                       "content": "Markdown Renderer",
-                      "fontFamily": "Inter",
+                      "fontFamily": "IBM Plex Mono",
                       "fontSize": 13,
                       "fontWeight": "600"
                     },
@@ -322,9 +323,9 @@
                       "type": "text",
                       "id": "RjpHo",
                       "name": "rendDesc",
-                      "fill": "#3B82F6",
+                      "fill": "#6E8A9A",
                       "content": "GFM Parsing (cmark-gfm) · NSAttributedString · Link Routing",
-                      "fontFamily": "Inter",
+                      "fontFamily": "IBM Plex Mono",
                       "fontSize": 11,
                       "fontWeight": "normal"
                     }
@@ -347,7 +348,7 @@
                   "height": 20,
                   "iconFontName": "chevron-down",
                   "iconFontFamily": "lucide",
-                  "fill": "#9CA3AF"
+                  "fill": "#9C9488"
                 }
               ]
             },
@@ -363,9 +364,9 @@
                   "type": "text",
                   "id": "AIpQG",
                   "name": "sysLabel",
-                  "fill": "#6B7280",
+                  "fill": "#7A7268",
                   "content": "System Integration",
-                  "fontFamily": "Inter",
+                  "fontFamily": "IBM Plex Mono",
                   "fontSize": 12,
                   "fontWeight": "600",
                   "letterSpacing": 0.5
@@ -382,11 +383,11 @@
                       "id": "huiOY",
                       "name": "box1",
                       "width": "fill_container",
-                      "fill": "#F3F4F6",
+                      "fill": "#EDEAE4",
                       "cornerRadius": 6,
                       "stroke": {
                         "thickness": 1,
-                        "fill": "#D1D5DB"
+                        "fill": "#CCC4B8"
                       },
                       "layout": "vertical",
                       "gap": 2,
@@ -404,15 +405,15 @@
                           "height": 16,
                           "iconFontName": "file",
                           "iconFontFamily": "lucide",
-                          "fill": "#6B7280"
+                          "fill": "#7A7268"
                         },
                         {
                           "type": "text",
                           "id": "ewVde",
                           "name": "box1t",
-                          "fill": "#374151",
+                          "fill": "#4A433B",
                           "content": "File Assoc",
-                          "fontFamily": "Inter",
+                          "fontFamily": "IBM Plex Mono",
                           "fontSize": 11,
                           "fontWeight": "500"
                         }
@@ -423,11 +424,11 @@
                       "id": "jgAzq",
                       "name": "box2",
                       "width": "fill_container",
-                      "fill": "#F3F4F6",
+                      "fill": "#EDEAE4",
                       "cornerRadius": 6,
                       "stroke": {
                         "thickness": 1,
-                        "fill": "#D1D5DB"
+                        "fill": "#CCC4B8"
                       },
                       "layout": "vertical",
                       "gap": 2,
@@ -445,15 +446,15 @@
                           "height": 16,
                           "iconFontName": "clipboard",
                           "iconFontFamily": "lucide",
-                          "fill": "#6B7280"
+                          "fill": "#7A7268"
                         },
                         {
                           "type": "text",
                           "id": "8HkWB",
                           "name": "box2t",
-                          "fill": "#374151",
+                          "fill": "#4A433B",
                           "content": "Pasteboard",
-                          "fontFamily": "Inter",
+                          "fontFamily": "IBM Plex Mono",
                           "fontSize": 11,
                           "fontWeight": "500"
                         }
@@ -464,11 +465,11 @@
                       "id": "DlVi9",
                       "name": "box3",
                       "width": "fill_container",
-                      "fill": "#F3F4F6",
+                      "fill": "#EDEAE4",
                       "cornerRadius": 6,
                       "stroke": {
                         "thickness": 1,
-                        "fill": "#D1D5DB"
+                        "fill": "#CCC4B8"
                       },
                       "layout": "vertical",
                       "gap": 2,
@@ -486,15 +487,15 @@
                           "height": 16,
                           "iconFontName": "printer",
                           "iconFontFamily": "lucide",
-                          "fill": "#6B7280"
+                          "fill": "#7A7268"
                         },
                         {
                           "type": "text",
                           "id": "5A9WL",
                           "name": "box3t",
-                          "fill": "#374151",
+                          "fill": "#4A433B",
                           "content": "Print / PDF",
-                          "fontFamily": "Inter",
+                          "fontFamily": "IBM Plex Mono",
                           "fontSize": 11,
                           "fontWeight": "500"
                         }
@@ -505,11 +506,11 @@
                       "id": "9bZUG",
                       "name": "box4",
                       "width": "fill_container",
-                      "fill": "#F3F4F6",
+                      "fill": "#EDEAE4",
                       "cornerRadius": 6,
                       "stroke": {
                         "thickness": 1,
-                        "fill": "#D1D5DB"
+                        "fill": "#CCC4B8"
                       },
                       "layout": "vertical",
                       "gap": 2,
@@ -527,15 +528,15 @@
                           "height": 16,
                           "iconFontName": "refresh-cw",
                           "iconFontFamily": "lucide",
-                          "fill": "#6B7280"
+                          "fill": "#7A7268"
                         },
                         {
                           "type": "text",
                           "id": "Q9bXQ",
                           "name": "box4t",
-                          "fill": "#374151",
+                          "fill": "#4A433B",
                           "content": "Sparkle",
-                          "fontFamily": "Inter",
+                          "fontFamily": "IBM Plex Mono",
                           "fontSize": 11,
                           "fontWeight": "500"
                         }
@@ -546,11 +547,11 @@
                       "id": "IUFeg",
                       "name": "box5",
                       "width": "fill_container",
-                      "fill": "#F3F4F6",
+                      "fill": "#EDEAE4",
                       "cornerRadius": 6,
                       "stroke": {
                         "thickness": 1,
-                        "fill": "#D1D5DB"
+                        "fill": "#CCC4B8"
                       },
                       "layout": "vertical",
                       "gap": 2,
@@ -568,15 +569,15 @@
                           "height": 16,
                           "iconFontName": "image",
                           "iconFontFamily": "lucide",
-                          "fill": "#6B7280"
+                          "fill": "#7A7268"
                         },
                         {
                           "type": "text",
                           "id": "jMAGp",
                           "name": "box5t",
-                          "fill": "#374151",
+                          "fill": "#4A433B",
                           "content": "Images",
-                          "fontFamily": "Inter",
+                          "fontFamily": "IBM Plex Mono",
                           "fontSize": 11,
                           "fontWeight": "500"
                         }
@@ -587,11 +588,11 @@
                       "id": "yhnyv",
                       "name": "box6",
                       "width": "fill_container",
-                      "fill": "#F3F4F6",
+                      "fill": "#EDEAE4",
                       "cornerRadius": 6,
                       "stroke": {
                         "thickness": 1,
-                        "fill": "#D1D5DB"
+                        "fill": "#CCC4B8"
                       },
                       "layout": "vertical",
                       "gap": 2,
@@ -609,15 +610,15 @@
                           "height": 16,
                           "iconFontName": "external-link",
                           "iconFontFamily": "lucide",
-                          "fill": "#6B7280"
+                          "fill": "#7A7268"
                         },
                         {
                           "type": "text",
                           "id": "uLOk1",
                           "name": "box6t",
-                          "fill": "#374151",
+                          "fill": "#4A433B",
                           "content": "Links",
-                          "fontFamily": "Inter",
+                          "fontFamily": "IBM Plex Mono",
                           "fontSize": 11,
                           "fontWeight": "500"
                         }
@@ -644,7 +645,7 @@
               "height": 20,
               "iconFontName": "chevrons-down",
               "iconFontFamily": "lucide",
-              "fill": "#9CA3AF"
+              "fill": "#9C9488"
             }
           ]
         },
@@ -660,7 +661,7 @@
               "id": "iLqrg",
               "name": "ext1",
               "width": "fill_container",
-              "fill": "#1A1A2E",
+              "fill": "#2B2622",
               "cornerRadius": 8,
               "layout": "vertical",
               "gap": 2,
@@ -678,15 +679,15 @@
                   "height": 16,
                   "iconFontName": "hard-drive",
                   "iconFontFamily": "lucide",
-                  "fill": "#94A3B8"
+                  "fill": "#9C9488"
                 },
                 {
                   "type": "text",
                   "id": "LGbms",
                   "name": "ext1t",
-                  "fill": "#CBD5E1",
+                  "fill": "#B8B0A4",
                   "content": "Finder / Disk",
-                  "fontFamily": "Inter",
+                  "fontFamily": "IBM Plex Mono",
                   "fontSize": 11,
                   "fontWeight": "500"
                 }
@@ -697,7 +698,7 @@
               "id": "kUIIY",
               "name": "ext2",
               "width": "fill_container",
-              "fill": "#1A1A2E",
+              "fill": "#2B2622",
               "cornerRadius": 8,
               "layout": "vertical",
               "gap": 2,
@@ -715,15 +716,15 @@
                   "height": 16,
                   "iconFontName": "globe",
                   "iconFontFamily": "lucide",
-                  "fill": "#94A3B8"
+                  "fill": "#9C9488"
                 },
                 {
                   "type": "text",
                   "id": "6nC3u",
                   "name": "ext2t",
-                  "fill": "#CBD5E1",
+                  "fill": "#B8B0A4",
                   "content": "Default Browser",
-                  "fontFamily": "Inter",
+                  "fontFamily": "IBM Plex Mono",
                   "fontSize": 11,
                   "fontWeight": "500"
                 }
@@ -734,7 +735,7 @@
               "id": "B28gJ",
               "name": "ext3",
               "width": "fill_container",
-              "fill": "#1A1A2E",
+              "fill": "#2B2622",
               "cornerRadius": 8,
               "layout": "vertical",
               "gap": 2,
@@ -752,15 +753,15 @@
                   "height": 16,
                   "iconFontName": "printer",
                   "iconFontFamily": "lucide",
-                  "fill": "#94A3B8"
+                  "fill": "#9C9488"
                 },
                 {
                   "type": "text",
                   "id": "dnu9l",
                   "name": "ext3t",
-                  "fill": "#CBD5E1",
+                  "fill": "#B8B0A4",
                   "content": "Print System",
-                  "fontFamily": "Inter",
+                  "fontFamily": "IBM Plex Mono",
                   "fontSize": 11,
                   "fontWeight": "500"
                 }
@@ -771,7 +772,7 @@
               "id": "nIrzN",
               "name": "ext4",
               "width": "fill_container",
-              "fill": "#1A1A2E",
+              "fill": "#2B2622",
               "cornerRadius": 8,
               "layout": "vertical",
               "gap": 2,
@@ -789,15 +790,15 @@
                   "height": 16,
                   "iconFontName": "cloud",
                   "iconFontFamily": "lucide",
-                  "fill": "#94A3B8"
+                  "fill": "#9C9488"
                 },
                 {
                   "type": "text",
                   "id": "xkKkW",
                   "name": "ext4t",
-                  "fill": "#CBD5E1",
+                  "fill": "#B8B0A4",
                   "content": "Update Server",
-                  "fontFamily": "Inter",
+                  "fontFamily": "IBM Plex Mono",
                   "fontSize": 11,
                   "fontWeight": "500"
                 }
