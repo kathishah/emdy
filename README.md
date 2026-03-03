@@ -45,4 +45,4 @@ Or open the Xcode project and hit Run.
 
 ## License
 
-MIT
+All rights reserved.
