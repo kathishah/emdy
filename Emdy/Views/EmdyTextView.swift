@@ -1,0 +1,30 @@
+import AppKit
+
+final class EmdyTextView: NSTextView {
+
+    override func copy(_ sender: Any?) {
+        guard let textStorage = textStorage else {
+            super.copy(sender)
+            return
+        }
+
+        let range = selectedRange()
+        if range.length > 0 {
+            PasteboardService.copyRTF(from: textStorage, range: range)
+        }
+    }
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        let menu = NSMenu()
+
+        let copyItem = NSMenuItem(title: "Copy", action: #selector(copy(_:)), keyEquivalent: "c")
+        copyItem.keyEquivalentModifierMask = .command
+        menu.addItem(copyItem)
+
+        let selectAllItem = NSMenuItem(title: "Select All", action: #selector(selectAll(_:)), keyEquivalent: "a")
+        selectAllItem.keyEquivalentModifierMask = .command
+        menu.addItem(selectAllItem)
+
+        return menu
+    }
+}

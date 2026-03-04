@@ -28,17 +28,20 @@ macOS native app (Swift, SwiftUI). This is not an Electron/web app.
 ## Build & Run
 
 ```bash
+# Generate Xcode project (after adding/removing files)
+xcodegen generate
+
 # Build
-xcodebuild -scheme Emdy -configuration Debug build
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme Emdy -configuration Debug build
 
 # Run tests
-xcodebuild -scheme Emdy test
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme Emdy test
 
 # Run a single test
-xcodebuild -scheme Emdy -only-testing:EmdyTests/TestClassName/testMethodName test
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme Emdy -only-testing:EmdyTests/TestClassName/testMethodName test
 ```
 
-If using Xcode, open `Emdy.xcodeproj` (or `.xcworkspace` if one exists).
+The project uses **xcodegen** — `project.yml` is the source of truth, the `.xcodeproj` is generated and gitignored. Run `xcodegen generate` after adding or removing files.
 
 ## Architecture
 

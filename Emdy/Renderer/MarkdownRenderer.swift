@@ -1,0 +1,326 @@
+import AppKit
+import cmark_gfm
+import cmark_gfm_extensions
+
+final class MarkdownRenderer {
+
+    let fontProvider: FontProvider
+    let imageResolver: ImageResolver
+    let palette: ColorPalette
+
+    init(fontFamily: FontFamily, zoomLevel: CGFloat, fileURL: URL? = nil, isDark: Bool = false) {
+        self.fontProvider = FontProvider(family: fontFamily, zoom: zoomLevel)
+        self.imageResolver = ImageResolver(baseURL: fileURL, isDark: isDark)
+        self.palette = ColorPalette.current(dark: isDark)
+    }
+
+    func render(_ markdown: String) -> NSAttributedString {
+        cmark_gfm_core_extensions_ensure_registered()
+
+        guard let parser = cmark_parser_new(CMARK_OPT_DEFAULT) else {
+            return NSAttributedString(string: markdown)
+        }
+        defer { cmark_parser_free(parser) }
+
+        let extensionNames = ["table", "strikethrough", "autolink", "tasklist"]
+        for name in extensionNames {
+            if let ext = cmark_find_syntax_extension(name) {
+                cmark_parser_attach_syntax_extension(parser, ext)
+            }
+        }
+
+        cmark_parser_feed(parser, markdown, markdown.utf8.count)
+        guard let doc = cmark_parser_finish(parser) else {
+            return NSAttributedString(string: markdown)
+        }
+        defer { cmark_node_free(doc) }
+
+        let result = NSMutableAttributedString()
+        renderNode(doc, into: result, context: RenderContext())
+        return result
+    }
+
+    // MARK: - Render context
+
+    private struct RenderContext {
+        var isBold = false
+        var isItalic = false
+        var isStrikethrough = false
+        var linkURL: String?
+        var headingLevel: Int = 0
+        var isCode = false
+        var isBlockquote = false
+        var listLevel: Int = 0
+        var isOrderedList = false
+        var listItemIndex: Int = 0
+        var isTableHeader = false
+    }
+
+    // MARK: - AST walker
+
+    private func renderNode(_ node: UnsafeMutablePointer<cmark_node>, into result: NSMutableAttributedString, context: RenderContext) {
+        var ctx = context
+        let type = cmark_node_get_type(node)
+        let typeString = String(cString: cmark_node_get_type_string(node))
+
+        switch type {
+        case CMARK_NODE_DOCUMENT:
+            renderChildren(of: node, into: result, context: ctx)
+
+        case CMARK_NODE_PARAGRAPH:
+            renderChildren(of: node, into: result, context: ctx)
+            if !isLastChild(node) && !isInsideTightList(node) {
+                result.append(newline())
+            }
+
+        case CMARK_NODE_HEADING:
+            ctx.headingLevel = Int(cmark_node_get_heading_level(node))
+            if result.length > 0 {
+                result.append(newline())
+            }
+            renderChildren(of: node, into: result, context: ctx)
+            result.append(newline())
+
+        case CMARK_NODE_TEXT:
+            if let literal = cmark_node_get_literal(node) {
+                let text = String(cString: literal)
+                result.append(styledText(text, context: ctx))
+            }
+
+        case CMARK_NODE_SOFTBREAK:
+            result.append(styledText(" ", context: ctx))
+
+        case CMARK_NODE_LINEBREAK:
+            result.append(newline())
+
+        case CMARK_NODE_EMPH:
+            ctx.isItalic = true
+            renderChildren(of: node, into: result, context: ctx)
+
+        case CMARK_NODE_STRONG:
+            ctx.isBold = true
+            renderChildren(of: node, into: result, context: ctx)
+
+        case CMARK_NODE_LINK:
+            if let url = cmark_node_get_url(node) {
+                ctx.linkURL = String(cString: url)
+            }
+            renderChildren(of: node, into: result, context: ctx)
+
+        case CMARK_NODE_IMAGE:
+            if let url = cmark_node_get_url(node) {
+                let urlStr = String(cString: url)
+                let imageAttr = imageResolver.resolveImage(src: urlStr)
+                result.append(imageAttr)
+                result.append(newline())
+            }
+
+        case CMARK_NODE_CODE:
+            if let literal = cmark_node_get_literal(node) {
+                let text = String(cString: literal)
+                var codeCtx = ctx
+                codeCtx.isCode = true
+                var attrs = baseAttributes(for: codeCtx)
+                attrs[.backgroundColor] = palette.codeBackground
+                result.append(NSAttributedString(string: text, attributes: attrs))
+            }
+
+        case CMARK_NODE_CODE_BLOCK:
+            if let literal = cmark_node_get_literal(node) {
+                let text = String(cString: literal)
+                var codeCtx = ctx
+                codeCtx.isCode = true
+                var attrs = baseAttributes(for: codeCtx)
+                attrs[.backgroundColor] = palette.codeBackground
+
+                let para = NSMutableParagraphStyle()
+                para.paragraphSpacingBefore = 8
+                para.paragraphSpacing = 8
+                para.firstLineHeadIndent = 12
+                para.headIndent = 12
+                para.tailIndent = -12
+                attrs[.paragraphStyle] = para
+
+                result.append(NSAttributedString(string: text, attributes: attrs))
+                if !text.hasSuffix("\n") {
+                    result.append(newline())
+                }
+            }
+
+        case CMARK_NODE_BLOCK_QUOTE:
+            ctx.isBlockquote = true
+            renderChildren(of: node, into: result, context: ctx)
+
+        case CMARK_NODE_LIST:
+            let isOrdered = cmark_node_get_list_type(node) == CMARK_ORDERED_LIST
+            ctx.listLevel += 1
+            ctx.isOrderedList = isOrdered
+            ctx.listItemIndex = 0
+            renderChildren(of: node, into: result, context: ctx)
+
+        case CMARK_NODE_ITEM:
+            ctx.listItemIndex += 1
+            let indent = String(repeating: "    ", count: max(0, ctx.listLevel - 1))
+            let bullet: String
+            if ctx.isOrderedList {
+                bullet = "\(ctx.listItemIndex). "
+            } else {
+                bullet = "\u{2022} "
+            }
+            result.append(styledText("\(indent)\(bullet)", context: ctx))
+            renderChildren(of: node, into: result, context: ctx)
+            if !isLastChild(node) {
+                result.append(newline())
+            }
+
+        case CMARK_NODE_THEMATIC_BREAK:
+            let rule = NSMutableAttributedString(string: "\n\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\n")
+            rule.addAttribute(.foregroundColor, value: palette.border, range: NSRange(location: 0, length: rule.length))
+            rule.addAttribute(.font, value: fontProvider.body, range: NSRange(location: 0, length: rule.length))
+            result.append(rule)
+
+        case CMARK_NODE_HTML_BLOCK, CMARK_NODE_HTML_INLINE:
+            if let literal = cmark_node_get_literal(node) {
+                result.append(styledText(String(cString: literal), context: ctx))
+            }
+
+        default:
+            switch typeString {
+            case "strikethrough":
+                ctx.isStrikethrough = true
+                renderChildren(of: node, into: result, context: ctx)
+
+            case "table":
+                if result.length > 0 { result.append(newline()) }
+                renderChildren(of: node, into: result, context: ctx)
+                result.append(newline())
+
+            case "table_header":
+                ctx.isTableHeader = true
+                renderChildren(of: node, into: result, context: ctx)
+
+            case "table_row":
+                renderChildren(of: node, into: result, context: ctx)
+                result.append(newline())
+
+            case "table_cell":
+                renderChildren(of: node, into: result, context: ctx)
+                if !isLastChild(node) {
+                    result.append(styledText("\t", context: ctx))
+                }
+
+            case "tasklist":
+                let checked = cmark_gfm_extensions_get_tasklist_item_checked(node)
+                let checkbox = checked ? "\u{2611} " : "\u{2610} "
+                result.append(styledText(checkbox, context: ctx))
+                renderChildren(of: node, into: result, context: ctx)
+
+            default:
+                renderChildren(of: node, into: result, context: ctx)
+            }
+        }
+    }
+
+    private func renderChildren(of node: UnsafeMutablePointer<cmark_node>, into result: NSMutableAttributedString, context: RenderContext) {
+        var child = cmark_node_first_child(node)
+        while let c = child {
+            renderNode(c, into: result, context: context)
+            child = cmark_node_next(c)
+        }
+    }
+
+    // MARK: - Styling
+
+    private func styledText(_ text: String, context: RenderContext) -> NSAttributedString {
+        NSAttributedString(string: text, attributes: baseAttributes(for: context))
+    }
+
+    private func baseAttributes(for ctx: RenderContext) -> [NSAttributedString.Key: Any] {
+        var attrs: [NSAttributedString.Key: Any] = [:]
+
+        let font: NSFont
+        if ctx.isCode {
+            font = ctx.isBold ? fontProvider.codeBold : fontProvider.code
+        } else if ctx.isTableHeader {
+            font = fontProvider.tableHeader
+        } else if ctx.headingLevel > 0 {
+            switch ctx.headingLevel {
+            case 1: font = fontProvider.h1
+            case 2: font = fontProvider.h2
+            case 3: font = fontProvider.h3
+            case 4: font = fontProvider.h4
+            case 5: font = fontProvider.h5
+            default: font = fontProvider.h6
+            }
+        } else if ctx.isBold && ctx.isItalic {
+            font = fontProvider.bodyBoldItalic
+        } else if ctx.isBold {
+            font = fontProvider.bodyBold
+        } else if ctx.isItalic {
+            font = fontProvider.bodyItalic
+        } else {
+            font = fontProvider.body
+        }
+        attrs[.font] = font
+
+        if ctx.isCode {
+            attrs[.foregroundColor] = palette.codeText
+        } else if ctx.isBlockquote {
+            attrs[.foregroundColor] = palette.blockquoteText
+        } else if ctx.headingLevel > 0 {
+            attrs[.foregroundColor] = palette.headline
+        } else if ctx.linkURL != nil {
+            attrs[.foregroundColor] = palette.link
+        } else {
+            attrs[.foregroundColor] = palette.body
+        }
+
+        if let url = ctx.linkURL {
+            attrs[.link] = url
+            attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue
+        }
+
+        if ctx.isStrikethrough {
+            attrs[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
+        }
+
+        let para = NSMutableParagraphStyle()
+        if ctx.headingLevel > 0 {
+            para.paragraphSpacingBefore = ctx.headingLevel == 1 ? 20 : 14
+            para.paragraphSpacing = 6
+            para.lineSpacing = 0
+        } else {
+            para.lineSpacing = fontProvider.bodyLineHeight - font.pointSize
+            para.paragraphSpacing = 4
+        }
+
+        if ctx.isBlockquote {
+            para.firstLineHeadIndent = 20
+            para.headIndent = 20
+        }
+
+        attrs[.paragraphStyle] = para
+        return attrs
+    }
+
+    private func newline() -> NSAttributedString {
+        NSAttributedString(string: "\n", attributes: [.font: fontProvider.body])
+    }
+
+    // MARK: - Helpers
+
+    private func isLastChild(_ node: UnsafeMutablePointer<cmark_node>) -> Bool {
+        cmark_node_next(node) == nil
+    }
+
+    private func isInsideTightList(_ node: UnsafeMutablePointer<cmark_node>) -> Bool {
+        var parent = cmark_node_parent(node)
+        while let p = parent {
+            if cmark_node_get_type(p) == CMARK_NODE_LIST {
+                return cmark_node_get_list_tight(p) != 0
+            }
+            parent = cmark_node_parent(p)
+        }
+        return false
+    }
+}
