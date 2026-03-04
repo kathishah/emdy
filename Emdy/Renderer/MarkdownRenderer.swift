@@ -134,8 +134,8 @@ final class MarkdownRenderer {
                 attrs[.backgroundColor] = palette.codeBackground
 
                 let para = NSMutableParagraphStyle()
-                para.paragraphSpacingBefore = 8
-                para.paragraphSpacing = 8
+                para.paragraphSpacingBefore = 16
+                para.paragraphSpacing = 16
                 para.firstLineHeadIndent = 12
                 para.headIndent = 12
                 para.tailIndent = -12
@@ -286,12 +286,15 @@ final class MarkdownRenderer {
 
         let para = NSMutableParagraphStyle()
         if ctx.headingLevel > 0 {
-            para.paragraphSpacingBefore = ctx.headingLevel == 1 ? 20 : 14
-            para.paragraphSpacing = 6
+            para.paragraphSpacingBefore = ctx.headingLevel == 1 ? 32 : 24
+            para.paragraphSpacing = 12
             para.lineSpacing = 0
+        } else if ctx.listLevel > 0 {
+            para.lineSpacing = fontProvider.bodyLineHeight - font.pointSize
+            para.paragraphSpacing = 0
         } else {
             para.lineSpacing = fontProvider.bodyLineHeight - font.pointSize
-            para.paragraphSpacing = 4
+            para.paragraphSpacing = 16
         }
 
         if ctx.isBlockquote {

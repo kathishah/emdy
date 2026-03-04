@@ -53,8 +53,7 @@ struct FontProvider {
         let s = scaled(size)
         switch family {
         case .serif:
-            return NSFont(name: "SourceSerif4-It", size: s)
-                ?? NSFont(name: "SourceSerif4-Italic", size: s)
+            return NSFont(name: "IBMPlexSerif-Italic", size: s)
                 ?? italicSystemFont(size: s)
         case .sansSerif:
             return NSFont(name: "IBMPlexSans-Italic", size: s)
@@ -69,8 +68,7 @@ struct FontProvider {
         let s = scaled(size)
         switch family {
         case .serif:
-            return NSFont(name: "SourceSerif4-BoldIt", size: s)
-                ?? NSFont(name: "SourceSerif4-BoldItalic", size: s)
+            return NSFont(name: "IBMPlexSerif-BoldItalic", size: s)
                 ?? italicSystemFont(size: s, weight: .bold)
         case .sansSerif:
             return NSFont(name: "IBMPlexSans-BoldItalic", size: s)
@@ -100,9 +98,9 @@ struct FontProvider {
 
     private func serifName(for weight: NSFont.Weight) -> String {
         switch weight {
-        case .bold: return "SourceSerif4-Bold"
-        case .semibold: return "SourceSerif4-SemiBold"
-        default: return "SourceSerif4-Regular"
+        case .bold: return "IBMPlexSerif-Bold"
+        case .semibold: return "IBMPlexSerif-SemiBold"
+        default: return "IBMPlexSerif-Regular"
         }
     }
 
