@@ -14,7 +14,7 @@ Emdy renders Markdown files as clean, formatted documents. Double-click and read
 - **File and folder support** — open a single file, or a directory to browse its Markdown files in a sidebar
 - **Light, Dark, and System themes** — dark mode uses a warm, Braun-inspired palette
 - **Optimal reading width** — text stays within a comfortable column, centered in the window
-- **Font switcher** — serif, sans-serif, or monospace
+- **Font switcher** — serif (IBM Plex Serif), sans-serif (IBM Plex Sans), or monospace (IBM Plex Mono)
 - **Zoom** — enlarge or reduce the document display, with a live percentage readout
 - **RTF copy** — copied text pastes formatted into Mail, Google Docs, Slack, etc.
 - **Print / Save as PDF** — via the standard macOS print dialog

@@ -75,3 +75,4 @@ The app follows a straightforward SwiftUI document-based app pattern:
 - Support macOS standard keyboard shortcuts (Cmd+/- for zoom, Cmd+C for copy).
 - Toolbar sizing follows a 4px rhythm (text 12px, icons 10px, padding in multiples of 4).
 - `ColorPalette` is a struct, not an enum. Both light and dark variants must be kept in sync when adding new semantic colors.
+- All three font families (IBM Plex Sans, IBM Plex Serif, IBM Plex Mono) are bundled as static `.ttf` files in `Emdy/Fonts/`. Do not use variable fonts — macOS `ATSApplicationFontsPath` does not reliably register them. When adding or changing fonts, use static weights and update `FontProvider.swift` with the correct PostScript names.
