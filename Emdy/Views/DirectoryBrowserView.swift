@@ -28,7 +28,7 @@ struct DirectoryBrowserView: View {
     var body: some View {
         NavigationSplitView {
             SidebarFileList(directory: directory)
-                .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 300)
+                .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
         } detail: {
             Group {
                 if !currentText.isEmpty {
@@ -70,9 +70,14 @@ struct DirectoryBrowserView: View {
                     isEnabled: !currentText.isEmpty
                 )
             }
+
+            ToolbarItem(placement: .primaryAction) {
+                FindButton(isEnabled: !currentText.isEmpty)
+            }
         }
         .toast($toastMessage)
         .applyTheme(settings.theme)
+        .background(SidebarWidthSetter(targetWidth: 240))
         .background(WindowAccessor { window in
             guard let window else { return }
             window.title = directory.selectedFile?.lastPathComponent
@@ -103,6 +108,17 @@ struct DirectoryBrowserView: View {
                 settings.theme = theme
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .findInPage)) { _ in
+            showFindBar()
+        }
+    }
+
+    private func showFindBar() {
+        guard let window = NSApp.keyWindow,
+              let textView = EmdyTextView.findIn(window: window) else { return }
+        let sender = NSMenuItem()
+        sender.tag = Int(NSTextFinder.Action.showFindInterface.rawValue)
+        textView.performFindPanelAction(sender)
     }
 
     private func loadFile(_ url: URL?) {
@@ -114,5 +130,44 @@ struct DirectoryBrowserView: View {
         FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
         if isDir.boolValue { return }
         currentText = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+    }
+}
+
+/// Forces the sidebar width by finding the underlying NSSplitView and setting the divider position.
+/// Also clears any autosave name so macOS doesn't restore a stale width.
+private struct SidebarWidthSetter: NSViewRepresentable {
+    let targetWidth: CGFloat
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            applySidebarWidth(from: view)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        applySidebarWidth(from: nsView)
+    }
+
+    private func applySidebarWidth(from view: NSView) {
+        guard let window = view.window else { return }
+        var allSplitViews: [NSSplitView] = []
+        collectSplitViews(in: window.contentView, into: &allSplitViews)
+
+        for splitView in allSplitViews where splitView.isVertical {
+            splitView.autosaveName = nil
+            splitView.setPosition(targetWidth, ofDividerAt: 0)
+        }
+    }
+
+    private func collectSplitViews(in view: NSView?, into result: inout [NSSplitView]) {
+        guard let view else { return }
+        if let sv = view as? NSSplitView {
+            result.append(sv)
+        }
+        for subview in view.subviews {
+            collectSplitViews(in: subview, into: &result)
+        }
     }
 }
