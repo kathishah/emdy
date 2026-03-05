@@ -192,22 +192,12 @@ final class MarkdownRenderer {
 
             case "table":
                 if result.length > 0 { result.append(newline()) }
-                renderChildren(of: node, into: result, context: ctx)
+                result.append(renderTable(node))
                 result.append(newline())
 
-            case "table_header":
-                ctx.isTableHeader = true
+            case "table_header", "table_row", "table_cell":
+                // Handled by renderTable; fallback if reached directly.
                 renderChildren(of: node, into: result, context: ctx)
-
-            case "table_row":
-                renderChildren(of: node, into: result, context: ctx)
-                result.append(newline())
-
-            case "table_cell":
-                renderChildren(of: node, into: result, context: ctx)
-                if !isLastChild(node) {
-                    result.append(styledText("\t", context: ctx))
-                }
 
             case "tasklist":
                 let checked = cmark_gfm_extensions_get_tasklist_item_checked(node)
@@ -308,6 +298,87 @@ final class MarkdownRenderer {
 
     private func newline() -> NSAttributedString {
         NSAttributedString(string: "\n", attributes: [.font: fontProvider.body])
+    }
+
+    // MARK: - Table rendering (NSTextTable)
+
+    private func renderTable(_ tableNode: UnsafeMutablePointer<cmark_node>) -> NSAttributedString {
+        // Collect rows and detect header.
+        struct CellInfo {
+            let node: UnsafeMutablePointer<cmark_node>
+            let isHeader: Bool
+        }
+        var rowData: [[CellInfo]] = []
+        var rowNode = cmark_node_first_child(tableNode)
+        while let row = rowNode {
+            let typeStr = String(cString: cmark_node_get_type_string(row))
+            let isHeader = (typeStr == "table_header")
+            var cells: [CellInfo] = []
+            var cellNode = cmark_node_first_child(row)
+            while let cell = cellNode {
+                cells.append(CellInfo(node: cell, isHeader: isHeader))
+                cellNode = cmark_node_next(cell)
+            }
+            rowData.append(cells)
+            rowNode = cmark_node_next(row)
+        }
+
+        guard !rowData.isEmpty else { return NSAttributedString() }
+        let colCount = rowData.map(\.count).max() ?? 0
+
+        let table = NSTextTable()
+        table.numberOfColumns = colCount
+        table.layoutAlgorithm = .fixedLayoutAlgorithm
+
+        let result = NSMutableAttributedString()
+        let cellPadding: CGFloat = 12
+
+        for (rowIndex, row) in rowData.enumerated() {
+            for (colIndex, cellInfo) in row.enumerated() {
+                let block = NSTextTableBlock(table: table,
+                    startingRow: rowIndex, rowSpan: 1,
+                    startingColumn: colIndex, columnSpan: 1)
+                block.setContentWidth(0, type: .absoluteValueType)
+                block.setWidth(cellPadding, type: .absoluteValueType, for: .padding)
+
+                // Collapsed borders: top + left on every cell,
+                // right on last column, bottom on last row.
+                let bw: CGFloat = 0.5
+                block.setBorderColor(palette.border)
+                block.setWidth(bw, type: .absoluteValueType, for: .border, edge: .minY) // top
+                block.setWidth(bw, type: .absoluteValueType, for: .border, edge: .minX) // left
+                if colIndex == row.count - 1 {
+                    block.setWidth(bw, type: .absoluteValueType, for: .border, edge: .maxX) // right
+                }
+                if rowIndex == rowData.count - 1 {
+                    block.setWidth(bw, type: .absoluteValueType, for: .border, edge: .maxY) // bottom
+                }
+
+                // Render cell content.
+                var ctx = RenderContext()
+                if cellInfo.isHeader { ctx.isTableHeader = true }
+                let cellContent = NSMutableAttributedString()
+                renderChildren(of: cellInfo.node, into: cellContent, context: ctx)
+
+                // Build paragraph style with the text block.
+                let para = NSMutableParagraphStyle()
+                para.textBlocks = [block]
+                para.lineSpacing = 4
+                para.paragraphSpacing = 2
+
+                // Apply paragraph style across the entire cell.
+                let fullRange = NSRange(location: 0, length: cellContent.length)
+                cellContent.addAttribute(.paragraphStyle, value: para, range: fullRange)
+
+                result.append(cellContent)
+                result.append(NSAttributedString(string: "\n", attributes: [
+                    .paragraphStyle: para,
+                    .font: cellInfo.isHeader ? fontProvider.tableHeader : fontProvider.body,
+                ]))
+            }
+        }
+
+        return result
     }
 
     // MARK: - Helpers

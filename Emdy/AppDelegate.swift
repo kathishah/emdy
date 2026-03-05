@@ -4,6 +4,7 @@ import SwiftUI
 class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var directoryWindow: NSWindow?
+    private var currentPanel: NSOpenPanel?
     private var panelIsOpen = false
     private var panelDismissed = false
 
@@ -11,13 +12,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         false
     }
 
+    private var strayPanelTimer: Timer?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Close any open panels spawned by DocumentGroup before showing ours.
-        DispatchQueue.main.async { [weak self] in
-            for window in NSApp.windows where window is NSOpenPanel {
-                (window as! NSOpenPanel).close()
+        showOpenPanel()
+        // DocumentGroup may spawn its own NSOpenPanel after launch.
+        // Poll briefly to close any stray panels it creates.
+        strayPanelTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] timer in
+            var found = false
+            for window in NSApp.windows {
+                if let stray = window as? NSOpenPanel, stray !== self?.currentPanel {
+                    stray.close()
+                    found = true
+                }
             }
-            self?.showOpenPanel()
+            // Stop after 2 seconds — if it hasn't appeared by then, it won't.
+            if timer.fireDate.timeIntervalSince(Date()) < -2 {
+                timer.invalidate()
+                self?.strayPanelTimer = nil
+            }
+        }
+        // Auto-invalidate after 2 seconds.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            self?.strayPanelTimer?.invalidate()
+            self?.strayPanelTimer = nil
         }
     }
 
@@ -35,6 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         panelIsOpen = true
 
         let panel = NSOpenPanel()
+        currentPanel = panel
         panel.canChooseFiles = true
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
@@ -43,6 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         panel.begin { [weak self] response in
             self?.panelIsOpen = false
+            self?.currentPanel = nil
 
             guard response == .OK, let url = panel.url else {
                 // User cancelled — suppress the reopen loop.
