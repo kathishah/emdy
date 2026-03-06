@@ -9,8 +9,13 @@ struct MarkdownTextView: NSViewRepresentable {
     let isDark: Bool
     let showMinimap: Bool
 
-    private static let maxContentWidth: CGFloat = 680
-    private static let minPadding: CGFloat = 56
+    private static let baseContentWidth: CGFloat = 680
+    private static let minPadding: CGFloat = 72
+
+    /// Content width scales with zoom to maintain ~65–75 characters per line.
+    private var maxContentWidth: CGFloat {
+        Self.baseContentWidth * zoomLevel
+    }
     static let bottomMarkerAttribute: NSAttributedString.Key = .init("EmdyBottomMargin")
 
     func makeNSView(context: Context) -> NSView {
@@ -187,10 +192,10 @@ struct MarkdownTextView: NSViewRepresentable {
 
     private func computeInsets(for viewWidth: CGFloat) -> CGFloat {
         let availableForContent = viewWidth - (Self.minPadding * 2)
-        if availableForContent <= Self.maxContentWidth {
+        if availableForContent <= maxContentWidth {
             return Self.minPadding
         }
-        return (viewWidth - Self.maxContentWidth) / 2
+        return (viewWidth - maxContentWidth) / 2
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
@@ -215,12 +220,13 @@ struct MarkdownTextView: NSViewRepresentable {
             guard let textView = textView as? EmdyTextView,
                   let scrollView = scrollView else { return }
             let viewWidth = textView.bounds.width
+            let maxWidth = MarkdownTextView.baseContentWidth * lastZoomLevel
             let availableForContent = viewWidth - (MarkdownTextView.minPadding * 2)
             let horizontalInset: CGFloat
-            if availableForContent <= MarkdownTextView.maxContentWidth {
+            if availableForContent <= maxWidth {
                 horizontalInset = MarkdownTextView.minPadding
             } else {
-                horizontalInset = (viewWidth - MarkdownTextView.maxContentWidth) / 2
+                horizontalInset = (viewWidth - maxWidth) / 2
             }
             let scrollY = scrollView.contentView.bounds.origin.y
             textView.suppressScrollAdjustment = true
