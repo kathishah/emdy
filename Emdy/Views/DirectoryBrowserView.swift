@@ -37,7 +37,8 @@ struct DirectoryBrowserView: View {
                         fontFamily: settings.fontFamily,
                         zoomLevel: settings.zoomLevel,
                         fileURL: directory.selectedFile,
-                        isDark: settings.theme.isDark
+                        isDark: settings.theme.isDark,
+                        showMinimap: settings.showMinimap
                     )
                 } else {
                     EmptyStateView()
@@ -46,14 +47,17 @@ struct DirectoryBrowserView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationSplitViewStyle(.prominentDetail)
-        .toolbar {
-            ToolbarItemGroup(placement: .automatic) {
+        .toolbar(id: "directory") {
+            ToolbarItem(id: "zoom", placement: .automatic) {
                 ZoomControls(settings: settings, isEnabled: !currentText.isEmpty)
+            }
+            ToolbarItem(id: "font", placement: .automatic) {
                 FontPicker(settings: settings, isEnabled: !currentText.isEmpty)
+            }
+            ToolbarItem(id: "theme", placement: .automatic) {
                 ThemePicker(settings: settings)
             }
-
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(id: "actions", placement: .automatic) {
                 ActionButtonGroup(
                     copyAction: {
                         PasteboardService.copyRTF(from: exportText, range: NSRange())
@@ -70,9 +74,11 @@ struct DirectoryBrowserView: View {
                     isEnabled: !currentText.isEmpty
                 )
             }
-
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(id: "find", placement: .automatic) {
                 FindButton(isEnabled: !currentText.isEmpty)
+            }
+            ToolbarItem(id: "minimap", placement: .automatic) {
+                MinimapToggle(settings: settings)
             }
         }
         .toast($toastMessage)

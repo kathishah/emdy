@@ -7,18 +7,23 @@ struct MarkdownTextView: NSViewRepresentable {
     let zoomLevel: CGFloat
     let fileURL: URL?
     let isDark: Bool
+    let showMinimap: Bool
 
     private static let maxContentWidth: CGFloat = 680
     private static let minPadding: CGFloat = 56
 
-    func makeNSView(context: Context) -> NSScrollView {
+    func makeNSView(context: Context) -> NSView {
         let palette = ColorPalette.current(dark: isDark)
+
+        // Container holds the scroll view and minimap side by side
+        let container = NSView()
 
         let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.drawsBackground = true
         scrollView.backgroundColor = palette.background
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
 
         let textView = EmdyTextView()
         textView.isEditable = false
@@ -41,10 +46,49 @@ struct MarkdownTextView: NSViewRepresentable {
 
         scrollView.documentView = textView
         context.coordinator.textView = textView
+        context.coordinator.scrollView = scrollView
         context.coordinator.fileURL = fileURL
 
-        renderMarkdown(into: textView)
+        // Minimap sits beside the scroll view
+        let minimap = MinimapView(frame: .zero)
+        minimap.translatesAutoresizingMaskIntoConstraints = false
+        minimap.observeScrollView(scrollView)
+        context.coordinator.minimap = minimap
+
+        container.addSubview(scrollView)
+        container.addSubview(minimap)
+
+        // Scroll view trailing: either minimap leading (when visible) or container trailing (when hidden)
+        let trailingToMinimap = scrollView.trailingAnchor.constraint(equalTo: minimap.leadingAnchor)
+        let trailingToContainer = scrollView.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+        trailingToMinimap.isActive = showMinimap
+        trailingToContainer.isActive = !showMinimap
+        context.coordinator.scrollTrailingToMinimap = trailingToMinimap
+        context.coordinator.scrollTrailingToContainer = trailingToContainer
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: container.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+
+            minimap.topAnchor.constraint(equalTo: container.topAnchor),
+            minimap.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            minimap.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            minimap.widthAnchor.constraint(equalToConstant: MinimapView.minimapWidth),
+        ])
+
+        let attributed = renderMarkdown()
+        textView.textStorage?.setAttributedString(attributed)
         updateContentInsets(textView)
+        scrollView.contentView.scroll(to: .zero)
+        scrollView.reflectScrolledClipView(scrollView.contentView)
+        minimap.isHidden = !showMinimap
+        minimap.updateContent(attributed, palette: palette)
+
+        context.coordinator.lastMarkdown = markdown
+        context.coordinator.lastFontFamily = fontFamily
+        context.coordinator.lastZoomLevel = zoomLevel
+        context.coordinator.lastIsDark = isDark
 
         NotificationCenter.default.addObserver(
             context.coordinator,
@@ -54,28 +98,64 @@ struct MarkdownTextView: NSViewRepresentable {
         )
         textView.postsFrameChangedNotifications = true
 
-        return scrollView
+        return container
     }
 
-    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+    func updateNSView(_ container: NSView, context: Context) {
         let palette = ColorPalette.current(dark: isDark)
+
+        guard let scrollView = context.coordinator.scrollView else { return }
         scrollView.backgroundColor = palette.background
 
         guard let textView = scrollView.documentView as? NSTextView else { return }
         textView.backgroundColor = palette.background
         context.coordinator.fileURL = fileURL
-        renderMarkdown(into: textView)
-        updateContentInsets(textView)
+
+        // Only re-render when content or rendering inputs actually changed
+        let coord = context.coordinator
+        let needsRender = markdown != coord.lastMarkdown
+            || fontFamily != coord.lastFontFamily
+            || zoomLevel != coord.lastZoomLevel
+            || isDark != coord.lastIsDark
+
+        if needsRender {
+            let scrollPosition = scrollView.contentView.bounds.origin
+            let attributed = renderMarkdown()
+            textView.textStorage?.setAttributedString(attributed)
+            updateContentInsets(textView)
+
+            // Restore scroll after layout
+            DispatchQueue.main.async {
+                scrollView.contentView.scroll(to: scrollPosition)
+                scrollView.reflectScrolledClipView(scrollView.contentView)
+            }
+
+            coord.lastMarkdown = markdown
+            coord.lastFontFamily = fontFamily
+            coord.lastZoomLevel = zoomLevel
+            coord.lastIsDark = isDark
+
+            if let minimap = coord.minimap, showMinimap {
+                minimap.updateContent(attributed, palette: palette)
+            }
+        }
+
+        if let minimap = coord.minimap {
+            minimap.isHidden = !showMinimap
+            coord.scrollTrailingToMinimap?.isActive = showMinimap
+            coord.scrollTrailingToContainer?.isActive = !showMinimap
+        }
     }
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
     }
 
-    private func renderMarkdown(into textView: NSTextView) {
-        let renderer = MarkdownRenderer(fontFamily: fontFamily, zoomLevel: zoomLevel, isDark: isDark)
-        let attributed = renderer.render(markdown)
-        textView.textStorage?.setAttributedString(attributed)
+    private func renderMarkdown() -> NSAttributedString {
+        MarkdownRenderer(
+            fontFamily: fontFamily, zoomLevel: zoomLevel,
+            fileURL: fileURL, isDark: isDark
+        ).render(markdown)
     }
 
     private func updateContentInsets(_ textView: NSTextView) {
@@ -94,14 +174,25 @@ struct MarkdownTextView: NSViewRepresentable {
 
     final class Coordinator: NSObject, NSTextViewDelegate {
         weak var textView: NSTextView?
+        weak var scrollView: NSScrollView?
+        weak var minimap: MinimapView?
+        var scrollTrailingToMinimap: NSLayoutConstraint?
+        var scrollTrailingToContainer: NSLayoutConstraint?
         var fileURL: URL?
+
+        // Track rendering inputs to avoid unnecessary re-renders
+        var lastMarkdown: String = ""
+        var lastFontFamily: FontFamily = .sansSerif
+        var lastZoomLevel: CGFloat = 1.0
+        var lastIsDark: Bool = false
 
         func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
             LinkHandler.handleLink(link, fileURL: fileURL)
         }
 
         @objc func frameDidChange(_ notification: Notification) {
-            guard let textView = textView else { return }
+            guard let textView = textView as? EmdyTextView,
+                  let scrollView = scrollView else { return }
             let viewWidth = textView.bounds.width
             let availableForContent = viewWidth - (MarkdownTextView.minPadding * 2)
             let horizontalInset: CGFloat
@@ -110,7 +201,12 @@ struct MarkdownTextView: NSViewRepresentable {
             } else {
                 horizontalInset = (viewWidth - MarkdownTextView.maxContentWidth) / 2
             }
+            let scrollY = scrollView.contentView.bounds.origin.y
+            textView.suppressScrollAdjustment = true
             textView.textContainerInset = NSSize(width: horizontalInset, height: 92)
+            scrollView.contentView.scroll(to: NSPoint(x: 0, y: scrollY))
+            scrollView.reflectScrolledClipView(scrollView.contentView)
+            textView.suppressScrollAdjustment = false
         }
     }
 }

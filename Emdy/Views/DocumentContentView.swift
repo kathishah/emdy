@@ -43,21 +43,25 @@ struct DocumentContentView: View {
                     fontFamily: settings.fontFamily,
                     zoomLevel: settings.zoomLevel,
                     fileURL: document.fileURL,
-                    isDark: settings.theme.isDark
+                    isDark: settings.theme.isDark,
+                    showMinimap: settings.showMinimap
                 )
             } else {
                 EmptyStateView()
             }
         }
         .applyTheme(settings.theme)
-        .toolbar {
-            ToolbarItemGroup(placement: .automatic) {
+        .toolbar(id: "document") {
+            ToolbarItem(id: "zoom", placement: .automatic) {
                 ZoomControls(settings: settings, isEnabled: hasContent)
+            }
+            ToolbarItem(id: "font", placement: .automatic) {
                 FontPicker(settings: settings, isEnabled: hasContent)
+            }
+            ToolbarItem(id: "theme", placement: .automatic) {
                 ThemePicker(settings: settings)
             }
-
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(id: "actions", placement: .automatic) {
                 ActionButtonGroup(
                     copyAction: {
                         PasteboardService.copyRTF(from: exportText, range: NSRange())
@@ -73,6 +77,12 @@ struct DocumentContentView: View {
                     },
                     isEnabled: hasContent
                 )
+            }
+            ToolbarItem(id: "find", placement: .automatic) {
+                FindButton(isEnabled: hasContent)
+            }
+            ToolbarItem(id: "minimap", placement: .automatic) {
+                MinimapToggle(settings: settings)
             }
         }
         .toast($toastMessage)
@@ -98,6 +108,17 @@ struct DocumentContentView: View {
                 settings.theme = theme
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .findInPage)) { _ in
+            showFindBar()
+        }
+    }
+
+    private func showFindBar() {
+        guard let window = NSApp.keyWindow,
+              let textView = EmdyTextView.findIn(window: window) else { return }
+        let sender = NSMenuItem()
+        sender.tag = Int(NSTextFinder.Action.showFindInterface.rawValue)
+        textView.performFindPanelAction(sender)
     }
 
     private func setupFileWatcher() {

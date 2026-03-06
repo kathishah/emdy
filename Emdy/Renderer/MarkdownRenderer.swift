@@ -128,20 +128,37 @@ final class MarkdownRenderer {
         case CMARK_NODE_CODE_BLOCK:
             if let literal = cmark_node_get_literal(node) {
                 let text = String(cString: literal)
-                var codeCtx = ctx
-                codeCtx.isCode = true
-                var attrs = baseAttributes(for: codeCtx)
-                attrs[.backgroundColor] = palette.codeBackground
+                let language = cmark_node_get_fence_info(node).flatMap {
+                    let s = String(cString: $0)
+                    return s.isEmpty ? nil : s
+                }
 
-                let para = NSMutableParagraphStyle()
-                para.paragraphSpacingBefore = 16
-                para.paragraphSpacing = 16
-                para.firstLineHeadIndent = 12
-                para.headIndent = 12
-                para.tailIndent = -12
-                attrs[.paragraphStyle] = para
+                let highlighter = SyntaxHighlighter(
+                    keyword: palette.syntaxKeyword,
+                    string: palette.syntaxString,
+                    comment: palette.syntaxComment,
+                    number: palette.syntaxNumber,
+                    baseColor: palette.codeText,
+                    font: fontProvider.code
+                )
+                let highlighted = NSMutableAttributedString(attributedString: highlighter.highlight(text, language: language))
 
-                result.append(NSAttributedString(string: text, attributes: attrs))
+                let codeBlock = NSTextBlock()
+                codeBlock.backgroundColor = palette.codeBackground
+                codeBlock.setValue(100, type: .percentageValueType, for: .width)
+                codeBlock.setWidth(12, type: .absoluteValueType, for: .padding)
+                codeBlock.setWidth(8, type: .absoluteValueType, for: .margin, edge: .minY)
+                codeBlock.setWidth(8, type: .absoluteValueType, for: .margin, edge: .maxY)
+
+                // Apply the text block to every paragraph in the code block
+                let fullRange = NSRange(location: 0, length: highlighted.length)
+                highlighted.enumerateAttribute(.paragraphStyle, in: fullRange, options: []) { value, range, _ in
+                    let para = (value as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
+                    para.textBlocks = [codeBlock]
+                    highlighted.addAttribute(.paragraphStyle, value: para, range: range)
+                }
+
+                result.append(highlighted)
                 if !text.hasSuffix("\n") {
                     result.append(newline())
                 }

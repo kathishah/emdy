@@ -52,6 +52,10 @@ final class DisplaySettings {
         didSet { UserDefaults.standard.set(theme.rawValue, forKey: "appTheme") }
     }
 
+    var showMinimap: Bool {
+        didSet { UserDefaults.standard.set(showMinimap, forKey: "showMinimap") }
+    }
+
     static let zoomMin: CGFloat = 0.5
     static let zoomMax: CGFloat = 3.0
     static let zoomStep: CGFloat = 0.1
@@ -72,6 +76,12 @@ final class DisplaySettings {
             self.theme = theme
         } else {
             self.theme = .system
+        }
+
+        if UserDefaults.standard.object(forKey: "showMinimap") != nil {
+            self.showMinimap = UserDefaults.standard.bool(forKey: "showMinimap")
+        } else {
+            self.showMinimap = true
         }
     }
 

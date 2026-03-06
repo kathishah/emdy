@@ -2,6 +2,13 @@ import SwiftUI
 
 struct EmdyMenuCommands: Commands {
     var body: some Commands {
+        CommandGroup(replacing: .textEditing) {
+            Button("Find…") {
+                NotificationCenter.default.post(name: .findInPage, object: nil)
+            }
+            .keyboardShortcut("f", modifiers: .command)
+        }
+
         CommandGroup(after: .textFormatting) {
             Section {
                 Button("Zoom In") {
@@ -58,4 +65,5 @@ extension Notification.Name {
     static let setFont = Notification.Name("emdy.setFont")
     static let setTheme = Notification.Name("emdy.setTheme")
     static let openDirectory = Notification.Name("emdy.openDirectory")
+    static let findInPage = Notification.Name("emdy.findInPage")
 }

@@ -4,6 +4,33 @@ final class EmdyTextView: NSTextView {
 
     override var acceptsFirstResponder: Bool { true }
 
+    /// When true, suppress NSTextView's internal scroll adjustments
+    /// (e.g. during inset changes from sidebar open/close).
+    var suppressScrollAdjustment = false
+
+    convenience init() {
+        self.init(frame: .zero)
+        usesFindBar = true
+        isIncrementalSearchingEnabled = true
+    }
+
+    /// Workaround for NSTextView bug: non-zero textContainerInset causes
+    /// miscalculated scroll jumps on resize. Temporarily zero the inset
+    /// while super handles the resize, then restore it.
+    override func viewDidEndLiveResize() {
+        let savedInset = textContainerInset
+        textContainerInset = NSSize(width: 0, height: 0)
+        super.viewDidEndLiveResize()
+        textContainerInset = savedInset
+    }
+
+    override func adjustScroll(_ newVisible: NSRect) -> NSRect {
+        if suppressScrollAdjustment {
+            return enclosingScrollView?.contentView.bounds ?? newVisible
+        }
+        return super.adjustScroll(newVisible)
+    }
+
     override func copy(_ sender: Any?) {
         guard let textStorage = textStorage else {
             super.copy(sender)

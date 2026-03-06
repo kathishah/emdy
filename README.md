@@ -11,13 +11,17 @@ Emdy renders Markdown files as clean, formatted documents. Double-click and read
 ## Features
 
 - **GitHub Flavored Markdown** — headings, lists, tables, code blocks, task lists, images, and more
-- **File and folder support** — open a single file, or a directory to browse its Markdown files in a sidebar
+- **File and folder support** — open a single file, or a directory to browse its Markdown files in a sidebar with expandable folders
+- **Find in page** — `Cmd F` for incremental search within a document
+- **Minimap** — a scaled overview of the document for quick navigation, togglable from the toolbar
+- **Syntax highlighting** — language-aware coloring for fenced code blocks
 - **Light, Dark, and System themes** — dark mode uses a warm, Braun-inspired palette
 - **Optimal reading width** — text stays within a comfortable column, centered in the window
 - **Font switcher** — serif (IBM Plex Serif), sans-serif (IBM Plex Sans), or monospace (IBM Plex Mono)
 - **Zoom** — enlarge or reduce the document display, with a live percentage readout
 - **RTF copy** — copied text pastes formatted into Mail, Google Docs, Slack, etc.
-- **Print / Save as PDF** — via the standard macOS print dialog
+- **Export as PDF** — save directly via a dedicated dialog
+- **Print** — via the standard macOS print dialog
 - **Native macOS app** — built with Swift and SwiftUI
 
 ## Install
@@ -33,8 +37,10 @@ Requires macOS 14 (Sonoma) or later.
 - **Zoom:** `Cmd +` / `Cmd -` (click the percentage in the toolbar to reset)
 - **Change font:** View menu or the Font dropdown in the toolbar
 - **Switch theme:** View menu or the Theme button in the toolbar
+- **Find:** `Cmd F` to search within the current document
 - **Copy as RTF:** Select text and `Cmd C`
-- **Print / PDF:** `Cmd P`
+- **Export PDF:** Click the PDF button in the toolbar
+- **Print:** `Cmd P`
 
 ## Building from source
 

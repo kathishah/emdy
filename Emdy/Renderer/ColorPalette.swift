@@ -28,6 +28,12 @@ struct ColorPalette {
     let codeBackground: NSColor
     let codeText: NSColor
 
+    // Syntax highlighting
+    let syntaxKeyword: NSColor
+    let syntaxString: NSColor
+    let syntaxComment: NSColor
+    let syntaxNumber: NSColor
+
     // Blockquote
     let blockquoteBorder: NSColor
     let blockquoteText: NSColor
@@ -74,6 +80,10 @@ extension ColorPalette {
             accent: acc, link: lnk,
             success: suc, successBackground: sucBg, error: err,
             codeBackground: secBg, codeText: bdy,
+            syntaxKeyword: NSColor(hex: "#8B5A3C"),
+            syntaxString: NSColor(hex: "#5F6B2D"),
+            syntaxComment: mut,
+            syntaxNumber: lnk,
             blockquoteBorder: brd, blockquoteText: med,
             sidebarSelection: brd
         )
@@ -101,6 +111,10 @@ extension ColorPalette {
             accent: acc, link: lnk,
             success: suc, successBackground: sucBg, error: err,
             codeBackground: secBg, codeText: bdy,
+            syntaxKeyword: NSColor(hex: "#D4A574"),
+            syntaxString: NSColor(hex: "#8A9B50"),
+            syntaxComment: mut,
+            syntaxNumber: lnk,
             blockquoteBorder: brd, blockquoteText: med,
             sidebarSelection: brd
         )

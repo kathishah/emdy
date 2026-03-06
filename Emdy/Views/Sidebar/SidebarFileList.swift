@@ -7,13 +7,15 @@ struct SidebarFileList: View {
     var body: some View {
         List(selection: $directory.selectedFile) {
             Section("Files") {
-                SidebarNodeRows(nodes: directory.rootNodes, expandedFolders: $expandedFolders)
+                SidebarNodeRows(
+                    nodes: directory.rootNodes,
+                    expandedFolders: $expandedFolders
+                )
             }
         }
         .listStyle(.sidebar)
         .listRowSeparator(.hidden)
         .onAppear {
-            // Auto-expand top-level folders
             for node in directory.rootNodes where node.isDirectory {
                 expandedFolders.insert(node.url)
             }
