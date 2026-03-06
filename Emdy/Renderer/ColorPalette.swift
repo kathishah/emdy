@@ -59,13 +59,13 @@ extension ColorPalette {
     static let dark = makeDark()
 
     private static func makeLight() -> ColorPalette {
-        let bg: NSColor = NSColor(hex: "#F5F2ED")
+        let bg: NSColor = NSColor(hex: "#F0F2F5")
         let secBg: NSColor = NSColor(hex: "#EDEAE4")
         let sbarBg: NSColor = NSColor(hex: "#E3DDD5")
-        let brd: NSColor = NSColor(hex: "#D9D2C6")
-        let sBrd: NSColor = NSColor(hex: "#CCC4B8")
-        let hdl: NSColor = NSColor(hex: "#2B2622")
-        let bdy: NSColor = NSColor(hex: "#4A433B")
+        let brd: NSColor = NSColor(hex: "#DDDDDD")
+        let sBrd: NSColor = NSColor(hex: "#DDDDDD")
+        let hdl: NSColor = .black
+        let bdy: NSColor = .black
         let med: NSColor = NSColor(hex: "#7A7268")
         let mut: NSColor = NSColor(hex: "#9C9488")
         let acc: NSColor = NSColor(hex: "#ED8008")
@@ -79,7 +79,7 @@ extension ColorPalette {
             headline: hdl, body: bdy, medium: med, muted: mut,
             accent: acc, link: lnk,
             success: suc, successBackground: sucBg, error: err,
-            codeBackground: secBg, codeText: bdy,
+            codeBackground: .white, codeText: bdy,
             syntaxKeyword: NSColor(hex: "#8B5A3C"),
             syntaxString: NSColor(hex: "#5F6B2D"),
             syntaxComment: mut,
@@ -90,13 +90,13 @@ extension ColorPalette {
     }
 
     private static func makeDark() -> ColorPalette {
-        let bg: NSColor = NSColor(hex: "#1E1C19")
+        let bg: NSColor = NSColor(hex: "#17181A")
         let secBg: NSColor = NSColor(hex: "#28251F")
         let sbarBg: NSColor = NSColor(hex: "#232019")
-        let brd: NSColor = NSColor(hex: "#3D382F")
-        let sBrd: NSColor = NSColor(hex: "#33302A")
-        let hdl: NSColor = NSColor(hex: "#E8E3DB")
-        let bdy: NSColor = NSColor(hex: "#C4BCB0")
+        let brd: NSColor = NSColor(hex: "#DDDDDD")
+        let sBrd: NSColor = NSColor(hex: "#DDDDDD")
+        let hdl: NSColor = NSColor(hex: "#B9B9B9")
+        let bdy: NSColor = NSColor(hex: "#B9B9B9")
         let med: NSColor = NSColor(hex: "#8A8278")
         let mut: NSColor = NSColor(hex: "#6B6359")
         let acc: NSColor = NSColor(hex: "#F09830")
@@ -110,7 +110,7 @@ extension ColorPalette {
             headline: hdl, body: bdy, medium: med, muted: mut,
             accent: acc, link: lnk,
             success: suc, successBackground: sucBg, error: err,
-            codeBackground: secBg, codeText: bdy,
+            codeBackground: NSColor(hex: "#222222"), codeText: bdy,
             syntaxKeyword: NSColor(hex: "#D4A574"),
             syntaxString: NSColor(hex: "#8A9B50"),
             syntaxComment: mut,

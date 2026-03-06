@@ -11,6 +11,7 @@ struct MarkdownTextView: NSViewRepresentable {
 
     private static let maxContentWidth: CGFloat = 680
     private static let minPadding: CGFloat = 56
+    static let bottomMarkerAttribute: NSAttributedString.Key = .init("EmdyBottomMargin")
 
     func makeNSView(context: Context) -> NSView {
         let palette = ColorPalette.current(dark: isDark)
@@ -19,7 +20,7 @@ struct MarkdownTextView: NSViewRepresentable {
         let container = NSView()
 
         let scrollView = NSScrollView()
-        scrollView.hasVerticalScroller = true
+        scrollView.hasVerticalScroller = false
         scrollView.hasHorizontalScroller = false
         scrollView.drawsBackground = true
         scrollView.backgroundColor = palette.background
@@ -78,12 +79,14 @@ struct MarkdownTextView: NSViewRepresentable {
         ])
 
         let attributed = renderMarkdown()
-        textView.textStorage?.setAttributedString(attributed)
+        let withMargin = appendBottomMargin(to: attributed)
+        textView.textStorage?.setAttributedString(withMargin)
+        (textView as? EmdyTextView)?.contentLength = attributed.length
         updateContentInsets(textView)
         scrollView.contentView.scroll(to: .zero)
         scrollView.reflectScrolledClipView(scrollView.contentView)
         minimap.isHidden = !showMinimap
-        minimap.updateContent(attributed, palette: palette)
+        minimap.updateContent(withMargin, palette: palette)
 
         context.coordinator.lastMarkdown = markdown
         context.coordinator.lastFontFamily = fontFamily
@@ -121,7 +124,9 @@ struct MarkdownTextView: NSViewRepresentable {
         if needsRender {
             let scrollPosition = scrollView.contentView.bounds.origin
             let attributed = renderMarkdown()
-            textView.textStorage?.setAttributedString(attributed)
+            let withMargin = appendBottomMargin(to: attributed)
+            textView.textStorage?.setAttributedString(withMargin)
+            (textView as? EmdyTextView)?.contentLength = attributed.length
             updateContentInsets(textView)
 
             // Restore scroll after layout
@@ -136,7 +141,7 @@ struct MarkdownTextView: NSViewRepresentable {
             coord.lastIsDark = isDark
 
             if let minimap = coord.minimap, showMinimap {
-                minimap.updateContent(attributed, palette: palette)
+                minimap.updateContent(withMargin, palette: palette)
             }
         }
 
@@ -156,6 +161,20 @@ struct MarkdownTextView: NSViewRepresentable {
             fontFamily: fontFamily, zoomLevel: zoomLevel,
             fileURL: fileURL, isDark: isDark
         ).render(markdown)
+    }
+
+    /// Appends a large non-selectable bottom margin to the attributed string.
+    private func appendBottomMargin(to attrString: NSAttributedString) -> NSAttributedString {
+        let result = NSMutableAttributedString(attributedString: attrString)
+        let marginLines = String(repeating: "\n", count: 40)
+        let palette = ColorPalette.current(dark: isDark)
+        let margin = NSAttributedString(string: marginLines, attributes: [
+            .font: NSFont.systemFont(ofSize: 12),
+            .foregroundColor: palette.background,
+            Self.bottomMarkerAttribute: true,
+        ])
+        result.append(margin)
+        return result
     }
 
     private func updateContentInsets(_ textView: NSTextView) {

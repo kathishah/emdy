@@ -8,6 +8,9 @@ final class EmdyTextView: NSTextView {
     /// (e.g. during inset changes from sidebar open/close).
     var suppressScrollAdjustment = false
 
+    /// Length of the actual document content (excluding trailing margin).
+    var contentLength: Int = Int.max
+
     convenience init() {
         self.init(frame: .zero)
         usesFindBar = true
@@ -22,6 +25,11 @@ final class EmdyTextView: NSTextView {
         textContainerInset = NSSize(width: 0, height: 0)
         super.viewDidEndLiveResize()
         textContainerInset = savedInset
+    }
+
+    override func selectionRange(forProposedRange proposedCharRange: NSRange, granularity: NSSelectionGranularity) -> NSRange {
+        let clamped = NSIntersectionRange(proposedCharRange, NSRange(location: 0, length: contentLength))
+        return super.selectionRange(forProposedRange: clamped, granularity: granularity)
     }
 
     override func adjustScroll(_ newVisible: NSRect) -> NSRect {

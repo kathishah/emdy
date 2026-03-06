@@ -148,7 +148,7 @@ final class MarkdownRenderer {
                 codeBlock.setValue(100, type: .percentageValueType, for: .width)
                 codeBlock.setWidth(12, type: .absoluteValueType, for: .padding)
                 codeBlock.setWidth(8, type: .absoluteValueType, for: .margin, edge: .minY)
-                codeBlock.setWidth(8, type: .absoluteValueType, for: .margin, edge: .maxY)
+                codeBlock.setWidth(24, type: .absoluteValueType, for: .margin, edge: .maxY)
 
                 // Apply the text block to every paragraph in the code block
                 let fullRange = NSRange(location: 0, length: highlighted.length)

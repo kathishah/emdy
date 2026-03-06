@@ -6,6 +6,14 @@ struct DirectoryBrowserView: View {
     @State private var currentText: String = ""
     @State private var toastMessage: ToastMessage?
 
+    private var wordCount: Int {
+        var count = 0
+        currentText.enumerateSubstrings(in: currentText.startIndex..., options: [.byWords, .substringNotRequired]) { _, _, _, _ in
+            count += 1
+        }
+        return count
+    }
+
     private var renderedText: NSAttributedString {
         MarkdownRenderer(
             fontFamily: settings.fontFamily,
@@ -30,21 +38,31 @@ struct DirectoryBrowserView: View {
             SidebarFileList(directory: directory)
                 .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
         } detail: {
-            Group {
+            VStack(spacing: 0) {
+                Group {
+                    if !currentText.isEmpty {
+                        MarkdownTextView(
+                            markdown: currentText,
+                            fontFamily: settings.fontFamily,
+                            zoomLevel: settings.zoomLevel,
+                            fileURL: directory.selectedFile,
+                            isDark: settings.theme.isDark,
+                            showMinimap: settings.showMinimap
+                        )
+                    } else {
+                        EmptyStateView()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 if !currentText.isEmpty {
-                    MarkdownTextView(
-                        markdown: currentText,
-                        fontFamily: settings.fontFamily,
-                        zoomLevel: settings.zoomLevel,
+                    Divider()
+                    StatusBarView(
                         fileURL: directory.selectedFile,
-                        isDark: settings.theme.isDark,
-                        showMinimap: settings.showMinimap
+                        wordCount: wordCount,
+                        isDark: settings.theme.isDark
                     )
-                } else {
-                    EmptyStateView()
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationSplitViewStyle(.prominentDetail)
         .toolbar(id: "directory") {

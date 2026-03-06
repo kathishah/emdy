@@ -16,6 +16,14 @@ struct DocumentContentView: View {
         !currentText.isEmpty
     }
 
+    private var wordCount: Int {
+        var count = 0
+        currentText.enumerateSubstrings(in: currentText.startIndex..., options: [.byWords, .substringNotRequired]) { _, _, _, _ in
+            count += 1
+        }
+        return count
+    }
+
     private var renderedText: NSAttributedString {
         MarkdownRenderer(
             fontFamily: settings.fontFamily,
@@ -36,18 +44,28 @@ struct DocumentContentView: View {
     }
 
     var body: some View {
-        Group {
+        VStack(spacing: 0) {
+            Group {
+                if hasContent {
+                    MarkdownTextView(
+                        markdown: currentText,
+                        fontFamily: settings.fontFamily,
+                        zoomLevel: settings.zoomLevel,
+                        fileURL: document.fileURL,
+                        isDark: settings.theme.isDark,
+                        showMinimap: settings.showMinimap
+                    )
+                } else {
+                    EmptyStateView()
+                }
+            }
             if hasContent {
-                MarkdownTextView(
-                    markdown: currentText,
-                    fontFamily: settings.fontFamily,
-                    zoomLevel: settings.zoomLevel,
+                Divider()
+                StatusBarView(
                     fileURL: document.fileURL,
-                    isDark: settings.theme.isDark,
-                    showMinimap: settings.showMinimap
+                    wordCount: wordCount,
+                    isDark: settings.theme.isDark
                 )
-            } else {
-                EmptyStateView()
             }
         }
         .applyTheme(settings.theme)

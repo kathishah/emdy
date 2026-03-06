@@ -66,10 +66,18 @@ final class MinimapView: NSView {
         needsDisplay = true
     }
 
+    private var frameObserver: NSObjectProtocol?
+    private var contentReady = false
+
     func observeScrollView(_ scrollView: NSScrollView) {
         targetScrollView = scrollView
+        contentReady = false
+        alphaValue = 0
 
         if let old = scrollObserver {
+            NotificationCenter.default.removeObserver(old)
+        }
+        if let old = frameObserver {
             NotificationCenter.default.removeObserver(old)
         }
 
@@ -82,10 +90,33 @@ final class MinimapView: NSView {
             self?.updateStickyOffset()
             self?.needsDisplay = true
         }
+
+        // Wait for the document view to finish layout, then reveal
+        if let docView = scrollView.documentView {
+            docView.postsFrameChangedNotifications = true
+            frameObserver = NotificationCenter.default.addObserver(
+                forName: NSView.frameDidChangeNotification,
+                object: docView,
+                queue: .main
+            ) { [weak self] _ in
+                guard let self = self, !self.contentReady else { return }
+                guard scrollView.documentView != nil else { return }
+                self.contentReady = true
+                self.updateStickyOffset()
+                self.needsDisplay = true
+                NSAnimationContext.runAnimationGroup { ctx in
+                    ctx.duration = 0.2
+                    self.animator().alphaValue = 1
+                }
+            }
+        }
     }
 
     deinit {
         if let obs = scrollObserver {
+            NotificationCenter.default.removeObserver(obs)
+        }
+        if let obs = frameObserver {
             NotificationCenter.default.removeObserver(obs)
         }
     }
@@ -135,16 +166,31 @@ final class MinimapView: NSView {
         return result
     }
 
-    private func desaturated(_ color: NSColor) -> NSColor {
-        guard let c = color.usingColorSpace(.sRGB) else { return color.withAlphaComponent(0.4) }
-        let grey = c.redComponent * 0.299 + c.greenComponent * 0.587 + c.blueComponent * 0.114
-        let mix: CGFloat = 0.25
-        return NSColor(
-            red: c.redComponent * mix + grey * (1 - mix),
-            green: c.greenComponent * mix + grey * (1 - mix),
-            blue: c.blueComponent * mix + grey * (1 - mix),
-            alpha: 0.55
-        )
+    private var cachedBlockColor: NSColor?
+    private var cachedAppearanceName: NSAppearance.Name?
+
+    private func blockColor() -> NSColor {
+        let appearance = effectiveAppearance
+        let name = appearance.name
+        if let cached = cachedBlockColor, cachedAppearanceName == name {
+            return cached
+        }
+        var resolved: NSColor = .gray
+        appearance.performAsCurrentDrawingAppearance {
+            if let c = NSColor.controlAccentColor.usingColorSpace(.sRGB) {
+                let grey = c.redComponent * 0.299 + c.greenComponent * 0.587 + c.blueComponent * 0.114
+                let sat: CGFloat = 0.25
+                resolved = NSColor(
+                    red: grey * (1 - sat) + c.redComponent * sat,
+                    green: grey * (1 - sat) + c.greenComponent * sat,
+                    blue: grey * (1 - sat) + c.blueComponent * sat,
+                    alpha: 0.45
+                )
+            }
+        }
+        cachedBlockColor = resolved
+        cachedAppearanceName = name
+        return resolved
     }
 
     // MARK: - Sticky offset
@@ -155,7 +201,7 @@ final class MinimapView: NSView {
 
         let visibleHeight = scrollView.contentView.bounds.height
         let totalHeight = docView.frame.height
-        guard totalHeight > 0 else { return nil }
+        guard totalHeight > 0, visibleHeight > 0 else { return nil }
 
         let scrollY = scrollView.contentView.bounds.origin.y
         let maxScroll = max(1, totalHeight - visibleHeight)
@@ -213,16 +259,13 @@ final class MinimapView: NSView {
                 guard w > 0 else { continue }
 
                 let rect = NSRect(x: x, y: y, width: w, height: lineHeight)
-                desaturated(run.color).setFill()
+                blockColor().setFill()
                 rect.fill()
             }
         }
 
         drawViewport()
 
-        // Left border
-        palette.subtleBorder.setFill()
-        NSRect(x: 0, y: 0, width: 0.5, height: bounds.height).fill()
     }
 
     private func drawViewport() {
@@ -237,12 +280,6 @@ final class MinimapView: NSView {
         let highlight = NSColor.controlAccentColor
         highlight.withAlphaComponent(0.08).setFill()
         vpRect.fill()
-
-        highlight.withAlphaComponent(0.25).setFill()
-        NSRect(x: 0, y: vpRect.minY, width: vpRect.width, height: 1).fill()
-        if vpRect.height > 2 {
-            NSRect(x: 0, y: vpRect.maxY - 1, width: vpRect.width, height: 1).fill()
-        }
     }
 
     // MARK: - Mouse
