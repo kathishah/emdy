@@ -1,0 +1,151 @@
+# Emdy — Foundational User Research Survey
+
+**Goal:** Validate whether reading Markdown files is a real pain point, understand who experiences it, how they currently deal with it, and where the problem happens.
+
+**Target:** Broad distribution across technical and non-technical populations. ~2 minutes to complete.
+
+**Distribution channels:** TBD (Reddit, LinkedIn, Slack/Discord communities, personal network, Twitter/X)
+
+---
+
+## Survey Questions
+
+### Q1. What best describes your role?
+
+_Single select_
+
+- Software engineer / developer
+- Designer (product, UX, graphic)
+- Product manager
+- Project manager / program manager
+- Marketing / communications
+- Operations / business analyst
+- Executive / leadership
+- Researcher / data scientist
+- Writer / editor / content
+- Student
+- Other: ___________
+
+### Q2. Which of these tools do you use regularly?
+
+_Multi-select_
+
+- Google Docs / Microsoft Word
+- Notion / Confluence
+- Slack / Teams
+- GitHub / GitLab
+- VS Code / Sublime / other code editor
+- Terminal / command line
+- Figma / Sketch
+- Obsidian / Logseq / other note-taking app
+- AI tools (ChatGPT, Claude, Copilot, etc.)
+
+### Q3. Do you know what a Markdown file is?
+
+_Single select_
+
+- Yes, I work with them regularly
+- Yes, I know what they are but don't work with them often
+- I've heard of Markdown but I'm not sure what it is
+- No
+
+_If "No" → skip to Q10 (end screen with thank-you message). This isn't a filter for quality — it just means the remaining questions won't make sense for this respondent._
+
+### Q4. How often do you encounter Markdown files (`.md`)?
+
+_Single select_
+
+- Daily
+- A few times a week
+- A few times a month
+- Rarely (a few times a year)
+- Never
+
+_If "Rarely" or "Never" → skip to Q10._
+
+### Q5. How do you typically encounter Markdown files?
+
+_Multi-select_
+
+- I receive them from colleagues or collaborators
+- I create them myself by hand
+- AI tools generate them for me (ChatGPT, Claude, Copilot, etc.)
+- I find them in project repos or documentation (READMEs, wikis, etc.)
+- I edit Markdown files that others created
+- Other: ___________
+
+### Q6. Where do you most often encounter Markdown files?
+
+_Multi-select_
+
+- On my Mac (in Finder, downloaded, attached to email)
+- On my Windows PC
+- On my Linux machine
+- In a web browser (GitHub, GitLab, Notion, etc.)
+- On my phone or tablet
+- Inside a code editor or IDE
+- In a messaging app (Slack, Teams, Discord)
+
+### Q7. When you need to read a Markdown file, what do you usually do?
+
+_Multi-select_
+
+- Open it in a code editor (VS Code, Sublime, etc.)
+- Open it in a Markdown editor (Typora, Obsidian, iA Writer, etc.)
+- View it on GitHub or GitLab in a browser
+- Open it in TextEdit / Notepad (see raw text)
+- Use a Quick Look extension on macOS
+- Paste it into an online Markdown viewer
+- Ask the sender to convert it to PDF or another format
+- Read the raw Markdown as-is
+- Other: ___________
+
+### Q8. What frustrates you about reading Markdown files today?
+
+_Multi-select_
+
+- I see raw syntax instead of formatted text
+- I have to open a heavy app just to read a document
+- Tables and complex formatting look broken or unreadable
+- Images don't display properly
+- I can't easily copy formatted text into other apps (email, Docs, Slack)
+- There's no good way to read them on my phone
+- I have to ask someone to convert the file for me
+- It takes too many steps to just read the content
+- I don't have any frustrations — it works fine for me
+- Other: ___________
+
+### Q9. Is there anything you wish you could do with Markdown files that you currently can't?
+
+_Open text (optional)_
+
+### Q10. Thank you!
+
+Thanks for taking the time. Your responses help us understand how people actually work with Markdown files today.
+
+---
+
+## Design Notes
+
+### What each question tells us
+
+| Question | Research objective |
+|----------|-------------------|
+| Q1 (Role) | Audience segmentation — who has this problem? |
+| Q2 (Tools) | Technical literacy signal — behavioral, not self-reported |
+| Q3 (Know Markdown?) | Screener — also tells us what % of a general population even recognizes the term |
+| Q4 (Frequency) | Problem scale — is this a daily reality or a rare occurrence? |
+| Q5 (How encounter) | Relationship to Markdown — reader, creator, editor, or AI-assisted? Feeds audience definition |
+| Q6 (Where encounter) | Platform priority — where does the problem actually happen? Informs build-on-Mac vs. web vs. mobile |
+| Q7 (Current behavior) | Workarounds — what are the competitive alternatives? What's "good enough" today? |
+| Q8 (Frustrations) | Pain points — what specifically is broken? Validates or challenges desk research findings |
+| Q9 (Wish) | Open discovery — surfaces unmet needs we haven't considered (collaboration, commenting, etc.) |
+
+### Analysis plan
+
+- **Cross-tabulate Q1 × Q4 × Q8** to see which roles experience the problem most frequently and most painfully
+- **Cross-tabulate Q2 × Q7** to see how technical literacy correlates with workaround sophistication
+- **Cross-tabulate Q5 × Q8** to see if people who receive Markdown have different frustrations than people who create it
+- **Cross-tabulate Q6 × Q1** to see where each audience segment encounters the problem — this directly informs platform priority
+- **Q9 open responses** get coded for themes, especially anything related to collaboration, sharing, commenting, or cross-platform needs
+- **Q3 "No" response rate** tells us how large the population is that encounters `.md` files without even knowing what they are — this has implications for how we market the product

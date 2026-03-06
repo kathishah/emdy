@@ -65,7 +65,7 @@ The design brief asserts that "every competitor is an editor first." That's the 
 #### Research operations
 
 - [ ] **Recruit interview participants** — Build a screener and recruit 10–15 participants across target segments. Mix of non-technical professionals and developers. Prioritize people who have received `.md` files recently.
-- [ ] **Build and distribute survey** — Design survey instrument covering problem validation, feature desirability, and platform preferences. Target 50+ responses. Use Typeform, Google Forms, or similar.
+- [x] **Build and distribute survey** — Survey instrument designed (`docs/user-research-survey.md`). 9 questions, ~2 min, covering problem validation, audience segmentation, platform behavior, current workarounds, and pain points. Conditional skips for non-Markdown-aware and infrequent users. Google Forms implementation in progress. Target 50+ responses.
 - [ ] **Synthesis workshop** — After data collection, consolidate all findings into a single research debrief. Update the design brief with validated (or invalidated) assumptions. Flag any strategic pivots.
 - [ ] **Update design brief** — Revise `docs/design-brief.md` with research findings. Replace assumptions with evidence. Adjust audience definitions, scope, and positioning as needed.
 
