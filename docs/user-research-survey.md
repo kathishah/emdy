@@ -118,11 +118,28 @@ _Multi-select_
 - I don't have any frustrations — it works fine for me
 - Other: ___________
 
-### Q9. Is there anything you wish you could do with Markdown files that you currently can't?
+### Q9. If you had a dedicated Markdown reader, which features would matter most to you?
+
+_Multi-select_
+
+- Clean formatted view (no raw syntax)
+- Dark mode
+- Search within a document
+- Copy formatted text into other apps
+- Export to PDF
+- Side-by-side view of multiple files
+- Share a rendered link with someone else
+- Comment or annotate
+- Collaborate with others in real time
+- Auto-refresh when the file changes on disk
+- Quick Look preview in Finder (press Space to preview)
+- Other: ___________
+
+### Q10. Is there anything you wish you could do with Markdown files that you currently can't?
 
 _Open text (optional)_
 
-### Q10. Thank you!
+### Q11. Thank you!
 
 Thanks for taking the time. Your responses help us understand how people actually work with Markdown files today.
 
@@ -142,7 +159,8 @@ Thanks for taking the time. Your responses help us understand how people actuall
 | Q6 (content types) | What Markdown is used for — reveals use cases, content complexity, and whether the reader needs to handle tables, code blocks, images, etc. |
 | Q7 (current behavior) | Workarounds — what are the competitive alternatives? What's "good enough" today? |
 | Q8 (frustrations) | Pain points — what specifically is broken? Validates or challenges desk research findings |
-| Q9 (wish) | Open discovery — surfaces unmet needs we haven't considered (collaboration, commenting, etc.) |
+| Q9 (desired features) | Feature validation — which capabilities matter most? Surfaces demand for collaboration, sharing, annotation beyond basic reading |
+| Q10 (wish) | Open discovery — surfaces unmet needs we haven't considered (collaboration, commenting, etc.) |
 
 ### Analysis plan
 
@@ -150,5 +168,7 @@ Thanks for taking the time. Your responses help us understand how people actuall
 - **Cross-tabulate Q1 × Q6** to see which roles read which content types — reveals whether non-technical users encounter different Markdown than developers
 - **Cross-tabulate Q5 × Q8** to see if people who receive Markdown have different frustrations than people who create it
 - **Cross-tabulate Q2 × Q7** to see how technical literacy correlates with workaround sophistication
-- **Q9 open responses** get coded for themes, especially anything related to collaboration, sharing, commenting, or cross-platform needs
+- **Cross-tabulate Q1 × Q9** to see which features matter to which roles — are non-technical users asking for different things than developers?
+- **Q9 feature frequency** to rank features by demand and identify potential killer features (especially collaboration, sharing, annotation)
+- **Q10 open responses** get coded for themes, especially anything related to collaboration, sharing, commenting, or cross-platform needs
 - **Q3 "No" response rate** tells us how large the population is that encounters `.md` files without even knowing what they are — this has implications for how we market the product

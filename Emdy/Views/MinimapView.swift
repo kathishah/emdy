@@ -189,21 +189,10 @@ final class MinimapView: NSView {
         if let cached = cachedBlockColor, cachedAppearanceName == name {
             return cached
         }
-        var resolved: NSColor = .gray
-        appearance.performAsCurrentDrawingAppearance {
-            if let c = NSColor.controlAccentColor.usingColorSpace(.sRGB) {
-                let grey = c.redComponent * 0.299 + c.greenComponent * 0.587 + c.blueComponent * 0.114
-                let sat: CGFloat = 0.25
-                let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-                let alpha: CGFloat = isDark ? 0.45 : 0.50
-                resolved = NSColor(
-                    red: grey * (1 - sat) + c.redComponent * sat,
-                    green: grey * (1 - sat) + c.greenComponent * sat,
-                    blue: grey * (1 - sat) + c.blueComponent * sat,
-                    alpha: alpha
-                )
-            }
-        }
+        let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let resolved: NSColor = isDark
+            ? NSColor.white.withAlphaComponent(0.30)
+            : NSColor.black.withAlphaComponent(0.35)
         cachedBlockColor = resolved
         cachedAppearanceName = name
         return resolved
@@ -295,7 +284,7 @@ final class MinimapView: NSView {
         guard !vpRect.isEmpty else { return }
 
         let highlight = NSColor.controlAccentColor
-        highlight.withAlphaComponent(0.08).setFill()
+        highlight.withAlphaComponent(0.15).setFill()
         vpRect.fill()
     }
 
