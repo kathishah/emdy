@@ -9,6 +9,13 @@ struct EmdyMenuCommands: Commands {
             .keyboardShortcut("f", modifiers: .command)
         }
 
+        CommandGroup(after: .toolbar) {
+            Button("Refresh") {
+                NotificationCenter.default.post(name: .refreshDocument, object: nil)
+            }
+            .keyboardShortcut("r", modifiers: .command)
+        }
+
         CommandGroup(after: .textFormatting) {
             Section {
                 Button("Zoom In") {
@@ -66,4 +73,5 @@ extension Notification.Name {
     static let setTheme = Notification.Name("emdy.setTheme")
     static let openDirectory = Notification.Name("emdy.openDirectory")
     static let findInPage = Notification.Name("emdy.findInPage")
+    static let refreshDocument = Notification.Name("emdy.refreshDocument")
 }

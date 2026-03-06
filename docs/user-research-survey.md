@@ -1,4 +1,4 @@
-# Emdy — Foundational User Research Survey
+# Emdy — Foundational user research survey
 
 **Goal:** Validate whether reading Markdown files is a real pain point, understand who experiences it, how they currently deal with it, and where the problem happens.
 
@@ -8,7 +8,7 @@
 
 ---
 
-## Survey Questions
+## Survey questions
 
 ### Q1. What best describes your role?
 
@@ -74,17 +74,20 @@ _Multi-select_
 - I edit Markdown files that others created
 - Other: ___________
 
-### Q6. Where do you most often encounter Markdown files?
+### Q6. What kinds of Markdown files do you read?
 
 _Multi-select_
 
-- On my Mac (in Finder, downloaded, attached to email)
-- On my Windows PC
-- On my Linux machine
-- In a web browser (GitHub, GitLab, Notion, etc.)
-- On my phone or tablet
-- Inside a code editor or IDE
-- In a messaging app (Slack, Teams, Discord)
+- READMEs and project documentation
+- Meeting notes or summaries
+- Personal notes or journals
+- PRDs or product specs
+- Technical specs or architecture docs
+- Blog posts or articles
+- Runbooks or how-to guides
+- AI-generated outputs (reports, outlines, drafts)
+- Changelogs or release notes
+- Other: ___________
 
 ### Q7. When you need to read a Markdown file, what do you usually do?
 
@@ -125,27 +128,27 @@ Thanks for taking the time. Your responses help us understand how people actuall
 
 ---
 
-## Design Notes
+## Design notes
 
 ### What each question tells us
 
 | Question | Research objective |
 |----------|-------------------|
-| Q1 (Role) | Audience segmentation — who has this problem? |
-| Q2 (Tools) | Technical literacy signal — behavioral, not self-reported |
-| Q3 (Know Markdown?) | Screener — also tells us what % of a general population even recognizes the term |
-| Q4 (Frequency) | Problem scale — is this a daily reality or a rare occurrence? |
-| Q5 (How encounter) | Relationship to Markdown — reader, creator, editor, or AI-assisted? Feeds audience definition |
-| Q6 (Where encounter) | Platform priority — where does the problem actually happen? Informs build-on-Mac vs. web vs. mobile |
-| Q7 (Current behavior) | Workarounds — what are the competitive alternatives? What's "good enough" today? |
-| Q8 (Frustrations) | Pain points — what specifically is broken? Validates or challenges desk research findings |
-| Q9 (Wish) | Open discovery — surfaces unmet needs we haven't considered (collaboration, commenting, etc.) |
+| Q1 (role) | Audience segmentation — who has this problem? |
+| Q2 (tools) | Technical literacy signal — behavioral, not self-reported |
+| Q3 (know Markdown?) | Screener — also tells us what % of a general population even recognizes the term |
+| Q4 (frequency) | Problem scale — is this a daily reality or a rare occurrence? |
+| Q5 (how encounter) | Relationship to Markdown — reader, creator, editor, or AI-assisted? Feeds audience definition |
+| Q6 (content types) | What Markdown is used for — reveals use cases, content complexity, and whether the reader needs to handle tables, code blocks, images, etc. |
+| Q7 (current behavior) | Workarounds — what are the competitive alternatives? What's "good enough" today? |
+| Q8 (frustrations) | Pain points — what specifically is broken? Validates or challenges desk research findings |
+| Q9 (wish) | Open discovery — surfaces unmet needs we haven't considered (collaboration, commenting, etc.) |
 
 ### Analysis plan
 
 - **Cross-tabulate Q1 × Q4 × Q8** to see which roles experience the problem most frequently and most painfully
-- **Cross-tabulate Q2 × Q7** to see how technical literacy correlates with workaround sophistication
+- **Cross-tabulate Q1 × Q6** to see which roles read which content types — reveals whether non-technical users encounter different Markdown than developers
 - **Cross-tabulate Q5 × Q8** to see if people who receive Markdown have different frustrations than people who create it
-- **Cross-tabulate Q6 × Q1** to see where each audience segment encounters the problem — this directly informs platform priority
+- **Cross-tabulate Q2 × Q7** to see how technical literacy correlates with workaround sophistication
 - **Q9 open responses** get coded for themes, especially anything related to collaboration, sharing, commenting, or cross-platform needs
 - **Q3 "No" response rate** tells us how large the population is that encounters `.md` files without even knowing what they are — this has implications for how we market the product

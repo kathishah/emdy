@@ -7,7 +7,7 @@ struct EmdyApp: App {
 
     var body: some Scene {
         DocumentGroup(viewing: MarkdownDocument.self) { file in
-            DocumentContentView(document: file.document)
+            DocumentContentView(document: file.document, fileURL: file.fileURL)
                 .configureWindow()
                 .sheet(isPresented: $showDefaultHandlerPrompt) {
                     DefaultHandlerSheet(isPresented: $showDefaultHandlerPrompt)

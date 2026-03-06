@@ -2,13 +2,15 @@ import SwiftUI
 
 struct DocumentContentView: View {
     var document: MarkdownDocument
+    let fileURL: URL?
     @State private var settings = DisplaySettings()
     @State private var toastMessage: ToastMessage?
     @State private var currentText: String
     @State private var fileWatcher: FileWatcher?
 
-    init(document: MarkdownDocument) {
+    init(document: MarkdownDocument, fileURL: URL? = nil) {
         self.document = document
+        self.fileURL = fileURL ?? fileURL
         self._currentText = State(initialValue: document.text)
     }
 
@@ -28,7 +30,7 @@ struct DocumentContentView: View {
         MarkdownRenderer(
             fontFamily: settings.fontFamily,
             zoomLevel: settings.zoomLevel,
-            fileURL: document.fileURL,
+            fileURL: fileURL,
             isDark: settings.theme.isDark
         ).render(currentText)
     }
@@ -38,7 +40,7 @@ struct DocumentContentView: View {
         MarkdownRenderer(
             fontFamily: settings.fontFamily,
             zoomLevel: 0.75,
-            fileURL: document.fileURL,
+            fileURL: fileURL,
             isDark: false
         ).render(currentText)
     }
@@ -51,7 +53,7 @@ struct DocumentContentView: View {
                         markdown: currentText,
                         fontFamily: settings.fontFamily,
                         zoomLevel: settings.zoomLevel,
-                        fileURL: document.fileURL,
+                        fileURL: fileURL,
                         isDark: settings.theme.isDark,
                         showMinimap: settings.showMinimap
                     )
@@ -62,7 +64,7 @@ struct DocumentContentView: View {
             if hasContent {
                 Divider()
                 StatusBarView(
-                    fileURL: document.fileURL,
+                    fileURL: fileURL,
                     wordCount: wordCount,
                     isDark: settings.theme.isDark
                 )
@@ -88,7 +90,7 @@ struct DocumentContentView: View {
                         PrintService.print(attributedString: exportText)
                     },
                     pdfAction: {
-                        let name = document.fileURL?.lastPathComponent ?? "document.md"
+                        let name = fileURL?.lastPathComponent ?? "document.md"
                         if PDFExportService.savePDF(attributedString: exportText, suggestedName: name) {
                             toastMessage = ToastMessage(message: "PDF saved successfully")
                         }
@@ -129,6 +131,9 @@ struct DocumentContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .findInPage)) { _ in
             showFindBar()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .refreshDocument)) { _ in
+            reloadFromDisk()
+        }
     }
 
     private func showFindBar() {
@@ -139,12 +144,16 @@ struct DocumentContentView: View {
         textView.performFindPanelAction(sender)
     }
 
+    private func reloadFromDisk() {
+        guard let url = fileURL,
+              let newText = try? String(contentsOf: url, encoding: .utf8) else { return }
+        currentText = newText
+    }
+
     private func setupFileWatcher() {
-        guard let url = document.fileURL else { return }
+        guard let url = fileURL else { return }
         fileWatcher = FileWatcher(url: url) { [self] in
-            if let newText = try? String(contentsOf: url, encoding: .utf8) {
-                currentText = newText
-            }
+            reloadFromDisk()
         }
     }
 }

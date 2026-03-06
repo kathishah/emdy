@@ -71,7 +71,8 @@ The design brief asserts that "every competitor is an editor first." That's the 
 
 ### App Features
 - [ ] Register as default macOS handler for `.md` / `.markdown` (UTType in Info.plist + first-launch prompt)
-- [ ] File watching — re-render when the open file changes on disk
+- [x] File watching — re-render when the open file changes on disk
+- [x] Manual refresh via `Cmd+R`
 - [ ] Drag-and-drop file opening (drop a `.md` file onto the app icon or window)
 - [ ] Anchor link handling — click a heading link to scroll within the document
 - [ ] Remote image loading (fetch and display images referenced by URL)
