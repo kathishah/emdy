@@ -39,6 +39,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            var isDir: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir) else { continue }
+
+            if isDir.boolValue {
+                openDirectoryBrowser(url: url)
+            } else {
+                NSDocumentController.shared.openDocument(
+                    withContentsOf: url, display: true) { _, _, _ in }
+            }
+        }
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag && !panelDismissed {
             showOpenPanel()
@@ -83,7 +97,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func openDirectoryBrowser(url: URL) {
+    func openDirectoryBrowser(url: URL) {
         let screenFrame = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800)
         let width = min(screenFrame.width * 0.75, 1400)
         let height = min(screenFrame.height * 0.8, 900)

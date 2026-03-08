@@ -99,6 +99,7 @@ struct DirectoryBrowserView: View {
                 MinimapToggle(settings: settings)
             }
         }
+        .markdownFileDrop()
         .toast($toastMessage, showMinimap: settings.showMinimap, isDark: settings.theme.isDark)
         .applyTheme(settings.theme)
         .background(SidebarWidthSetter(targetWidth: 240))

@@ -105,6 +105,7 @@ struct DocumentContentView: View {
                 MinimapToggle(settings: settings)
             }
         }
+        .markdownFileDrop()
         .toast($toastMessage, showMinimap: settings.showMinimap, isDark: settings.theme.isDark)
         .onAppear {
             setupFileWatcher()
