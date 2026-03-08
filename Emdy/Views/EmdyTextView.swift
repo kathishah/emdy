@@ -109,7 +109,20 @@ final class EmdyTextView: NSTextView {
         let range = selectedRange()
         if range.length > 0 {
             PasteboardService.copyRTF(from: textStorage, range: range)
+            NotificationCenter.default.post(name: .copyNotification, object: nil)
         }
+    }
+
+    func performFindNext() {
+        let sender = NSMenuItem()
+        sender.tag = Int(NSTextFinder.Action.nextMatch.rawValue)
+        performFindPanelAction(sender)
+    }
+
+    func performFindPrevious() {
+        let sender = NSMenuItem()
+        sender.tag = Int(NSTextFinder.Action.previousMatch.rawValue)
+        performFindPanelAction(sender)
     }
 
     override func menu(for event: NSEvent) -> NSMenu? {

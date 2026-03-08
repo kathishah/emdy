@@ -106,16 +106,12 @@ struct DocumentContentView: View {
                 ActionButtonGroup(
                     copyAction: {
                         PasteboardService.copyRTF(from: exportText, range: NSRange())
+                        toastMessage = ToastMessage(message: "Copied to clipboard")
                     },
                     printAction: {
                         PrintService.print(attributedString: exportText)
                     },
-                    pdfAction: {
-                        let name = fileURL?.lastPathComponent ?? "document.md"
-                        if PDFExportService.savePDF(attributedString: exportText, suggestedName: name) {
-                            toastMessage = ToastMessage(message: "PDF saved successfully")
-                        }
-                    },
+                    pdfAction: { exportPDF() },
                     isEnabled: hasContent
                 )
             }
@@ -156,11 +152,26 @@ struct DocumentContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .findInPage)) { _ in
             showFindBar()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .findNext)) { _ in
+            findNextOrPrevious(next: true)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .findPrevious)) { _ in
+            findNextOrPrevious(next: false)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .copyNotification)) { _ in
+            toastMessage = ToastMessage(message: "Copied to clipboard")
+        }
         .onReceive(NotificationCenter.default.publisher(for: .refreshDocument)) { _ in
             reloadFromDisk()
         }
         .onReceive(NotificationCenter.default.publisher(for: .toggleHeadingNavigator)) { _ in
             settings.showHeadingNavigator.toggle()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .toggleMinimap)) { _ in
+            settings.showMinimap.toggle()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .exportPDF)) { _ in
+            exportPDF()
         }
     }
 
@@ -172,10 +183,27 @@ struct DocumentContentView: View {
         textView.performFindPanelAction(sender)
     }
 
+    private func findNextOrPrevious(next: Bool) {
+        guard let window = NSApp.keyWindow,
+              let textView = EmdyTextView.findIn(window: window) else { return }
+        if next {
+            textView.performFindNext()
+        } else {
+            textView.performFindPrevious()
+        }
+    }
+
     private func reloadFromDisk() {
         guard let url = fileURL,
               let newText = try? String(contentsOf: url, encoding: .utf8) else { return }
         currentText = newText
+    }
+
+    private func exportPDF() {
+        let name = fileURL?.lastPathComponent ?? "document.md"
+        if PDFExportService.savePDF(attributedString: exportText, suggestedName: name) {
+            toastMessage = ToastMessage(message: "PDF saved successfully")
+        }
     }
 
     private func setupFileWatcher() {

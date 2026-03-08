@@ -28,6 +28,6 @@ struct ThemePicker: View {
         } label: {
             Label("Theme", systemImage: icon)
         }
-        .help("Theme")
+        .help("Theme (⌘7/8/9)")
     }
 }

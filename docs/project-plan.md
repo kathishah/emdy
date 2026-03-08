@@ -92,8 +92,8 @@ The current feature set was designed from assumptions about what a "Markdown rea
 - [ ] Direct download website
 
 ### Polish & QA
-- [ ] Test on macOS light and dark mode across all views
-- [ ] Keyboard shortcuts audit and implementation (ensure all standard shortcuts work, add any missing)
+- [ ] Test on macOS light and dark mode across all views (sidebar/titlebar lag fixed — see Completed)
+- [x] Keyboard shortcuts audit and implementation (ensure all standard shortcuts work, add any missing)
 - [ ] Accessibility pass (VoiceOver, keyboard navigation)
 - [ ] Performance testing with large Markdown files
 - [ ] Expand test coverage beyond `MarkdownRendererTests`
@@ -153,6 +153,7 @@ The current feature set was designed from assumptions about what a "Markdown rea
 - [x] Toast notifications
 - [x] Empty state view
 - [x] Toolbar with consistent spacing (4px rhythm, `ControlGroup` wrapping, `toolbar(id:)`)
+- [x] Theme switching lag fix — sidebar, title bar, and minimap now update immediately on theme change (recursive appearance propagation + `displayIfNeeded`)
 
 ### Tests
 - [x] Markdown renderer tests (`EmdyTests/MarkdownRendererTests.swift`)

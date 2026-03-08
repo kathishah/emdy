@@ -94,7 +94,7 @@ struct MarkdownTextView: NSViewRepresentable {
         scrollView.contentView.scroll(to: .zero)
         scrollView.reflectScrolledClipView(scrollView.contentView)
         minimap.isHidden = !showMinimap
-        minimap.updateContent(withMargin, palette: palette)
+        minimap.updateContent(withMargin, palette: palette, isDark: isDark)
 
         context.coordinator.lastMarkdown = markdown
         context.coordinator.lastFontFamily = fontFamily
@@ -150,7 +150,7 @@ struct MarkdownTextView: NSViewRepresentable {
             coord.lastIsDark = isDark
 
             if let minimap = coord.minimap, showMinimap {
-                minimap.updateContent(withMargin, palette: palette)
+                minimap.updateContent(withMargin, palette: palette, isDark: isDark)
             }
         }
 
@@ -169,6 +169,11 @@ struct MarkdownTextView: NSViewRepresentable {
             minimap.isHidden = !showMinimap
             coord.scrollTrailingToMinimap?.isActive = showMinimap
             coord.scrollTrailingToContainer?.isActive = !showMinimap
+
+            // Always refresh minimap colors so theme switches apply immediately
+            if showMinimap && !needsRender {
+                minimap.refreshPalette(palette, isDark: isDark)
+            }
         }
     }
 

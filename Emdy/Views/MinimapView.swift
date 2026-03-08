@@ -9,6 +9,7 @@ final class MinimapView: NSView {
     private var lines: [MinimapLine] = []
     private var totalLineCount: Int = 0
     private var palette = ColorPalette.light
+    private var isDark = false
 
     private let lineHeight: CGFloat = 3
     private let lineGap: CGFloat = 1
@@ -60,11 +61,21 @@ final class MinimapView: NSView {
 
     // MARK: - Content
 
-    func updateContent(_ attributedString: NSAttributedString, palette: ColorPalette) {
+    func updateContent(_ attributedString: NSAttributedString, palette: ColorPalette, isDark: Bool) {
         self.palette = palette
+        self.isDark = isDark
         self.lines = buildLines(from: attributedString)
         self.totalLineCount = lines.count
         needsDisplay = true
+        displayIfNeeded()
+    }
+
+    /// Refresh palette and redraw without rebuilding line data.
+    func refreshPalette(_ palette: ColorPalette, isDark: Bool) {
+        self.palette = palette
+        self.isDark = isDark
+        needsDisplay = true
+        displayIfNeeded()
     }
 
     private var frameObserver: NSObjectProtocol?
@@ -181,22 +192,10 @@ final class MinimapView: NSView {
         return result
     }
 
-    private var cachedBlockColor: NSColor?
-    private var cachedAppearanceName: NSAppearance.Name?
-
     private func blockColor() -> NSColor {
-        let appearance = effectiveAppearance
-        let name = appearance.name
-        if let cached = cachedBlockColor, cachedAppearanceName == name {
-            return cached
-        }
-        let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        let resolved: NSColor = isDark
+        isDark
             ? NSColor.white.withAlphaComponent(0.30)
             : NSColor.black.withAlphaComponent(0.35)
-        cachedBlockColor = resolved
-        cachedAppearanceName = name
-        return resolved
     }
 
     // MARK: - Sticky offset
@@ -243,7 +242,6 @@ final class MinimapView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         guard !lines.isEmpty else { return }
 
-        let isDark = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         (isDark ? NSColor(hex: "#222222") : palette.background).setFill()
         bounds.fill()
 

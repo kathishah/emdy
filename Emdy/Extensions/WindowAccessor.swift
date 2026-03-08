@@ -12,9 +12,7 @@ struct WindowAccessor: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
-            callback(nsView.window)
-        }
+        callback(nsView.window)
     }
 }
 
@@ -32,9 +30,25 @@ extension View {
         self
             .background(WindowAccessor { window in
                 guard let window else { return }
-                window.appearance = theme.appearance
+                let target = theme.resolvedAppearance
+                window.appearance = target
                 window.backgroundColor = ColorPalette.current(dark: theme.isDark).background
+                // Recursively force all subviews (NSVisualEffectView, etc.) to redraw
+                forceAppearanceUpdate(on: window.contentView, appearance: target)
+                window.viewsNeedDisplay = true
+                window.displayIfNeeded()
+                window.invalidateShadow()
             })
             .preferredColorScheme(theme.preferredColorScheme)
+    }
+}
+
+private func forceAppearanceUpdate(on view: NSView?, appearance: NSAppearance) {
+    guard let view else { return }
+    view.appearance = appearance
+    view.needsDisplay = true
+    view.needsLayout = true
+    for subview in view.subviews {
+        forceAppearanceUpdate(on: subview, appearance: appearance)
     }
 }

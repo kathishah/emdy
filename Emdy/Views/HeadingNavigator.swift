@@ -31,7 +31,7 @@ struct HeadingNavigator: View {
             .padding(.vertical, 8)
         }
         .frame(width: 200)
-        .background(Color(nsColor: palette.sidebarBackground).opacity(0.5))
+        .background(Color(nsColor: palette.background).opacity(0.85))
     }
 
     private func fontSize(for level: Int) -> CGFloat {

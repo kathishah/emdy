@@ -11,7 +11,7 @@ struct ZoomControls: View {
                     .frame(width: 28, height: 22)
             }
             .buttonStyle(.borderless)
-            .help("Zoom Out")
+            .help("Zoom Out (⌘−)")
 
             Divider()
                 .frame(height: 14)
@@ -24,7 +24,7 @@ struct ZoomControls: View {
                     .frame(minWidth: 36, minHeight: 22)
             }
             .buttonStyle(.borderless)
-            .help("Reset Zoom")
+            .help("Reset Zoom (⌘0)")
 
             Divider()
                 .frame(height: 14)
@@ -34,7 +34,7 @@ struct ZoomControls: View {
                     .frame(width: 28, height: 22)
             }
             .buttonStyle(.borderless)
-            .help("Zoom In")
+            .help("Zoom In (⌘+)")
         }
         .padding(.horizontal, 4)
         .disabled(!isEnabled)

@@ -12,16 +12,16 @@ struct ActionButtonGroup: View {
             Button(action: copyAction) {
                 Label("Copy", systemImage: "doc.on.doc")
             }
-            .help("Copy")
+            .help("Copy (⌘C)")
             Button(action: printAction) {
                 Label("Print", systemImage: "printer")
             }
-            .help("Print")
+            .help("Print (⌘P)")
             if let pdfAction {
                 Button(action: pdfAction) {
                     Label("PDF", systemImage: "arrow.down.doc")
                 }
-                .help("Export PDF")
+                .help("Export PDF (⇧⌘E)")
             }
         }
         .disabled(!isEnabled)
@@ -40,7 +40,7 @@ struct HeadingNavigatorToggle: View {
                 Label("Headings", systemImage: "list.bullet")
             }
         }
-        .help(settings.showHeadingNavigator ? "Hide Headings" : "Show Headings")
+        .help(settings.showHeadingNavigator ? "Hide Headings (⇧⌘H)" : "Show Headings (⇧⌘H)")
         .disabled(!isEnabled)
     }
 }
@@ -56,7 +56,7 @@ struct MinimapToggle: View {
                 Label("Minimap", systemImage: "sidebar.trailing")
             }
         }
-        .help(settings.showMinimap ? "Hide Minimap" : "Show Minimap")
+        .help(settings.showMinimap ? "Hide Minimap (⇧⌘M)" : "Show Minimap (⇧⌘M)")
     }
 }
 
@@ -69,7 +69,7 @@ struct FindButton: View {
                 Label("Find", systemImage: "magnifyingglass")
             }
         }
-        .help("Find")
+        .help("Find (⌘F)")
         .disabled(!isEnabled)
     }
 

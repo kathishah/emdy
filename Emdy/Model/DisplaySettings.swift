@@ -17,7 +17,7 @@ enum AppTheme: String, CaseIterable {
         case .light: return false
         case .dark: return true
         case .system:
-            return NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            return UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
         }
     }
 
@@ -29,11 +29,13 @@ enum AppTheme: String, CaseIterable {
         }
     }
 
-    var appearance: NSAppearance? {
+    var resolvedAppearance: NSAppearance {
         switch self {
-        case .light: return NSAppearance(named: .aqua)
-        case .dark: return NSAppearance(named: .darkAqua)
-        case .system: return nil
+        case .light: return NSAppearance(named: .aqua)!
+        case .dark: return NSAppearance(named: .darkAqua)!
+        case .system:
+            let dark = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
+            return NSAppearance(named: dark ? .darkAqua : .aqua)!
         }
     }
 }
@@ -49,7 +51,9 @@ final class DisplaySettings {
     }
 
     var theme: AppTheme {
-        didSet { UserDefaults.standard.set(theme.rawValue, forKey: "appTheme") }
+        didSet {
+            UserDefaults.standard.set(theme.rawValue, forKey: "appTheme")
+        }
     }
 
     var showMinimap: Bool {
@@ -63,6 +67,8 @@ final class DisplaySettings {
     static let zoomMin: CGFloat = 0.5
     static let zoomMax: CGFloat = 3.0
     static let zoomStep: CGFloat = 0.1
+
+    private var systemAppearanceObserver: NSObjectProtocol?
 
     init() {
         if let saved = UserDefaults.standard.string(forKey: "fontFamily"),
@@ -92,6 +98,16 @@ final class DisplaySettings {
             self.showHeadingNavigator = UserDefaults.standard.bool(forKey: "showHeadingNavigator")
         } else {
             self.showHeadingNavigator = false
+        }
+
+        // Watch for macOS system appearance changes so System theme stays in sync.
+        systemAppearanceObserver = DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name("AppleInterfaceThemeChangedNotification"),
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self, self.theme == .system else { return }
+            // Trigger @Observable change notification so views re-evaluate isDark
+            self.theme = .system
         }
     }
 

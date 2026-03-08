@@ -33,7 +33,7 @@ struct FontPicker: View {
                 .font(fontForLabel)
                 .frame(width: 24)
         }
-        .help("Font")
+        .help("Font (⌘1/2/3)")
         .disabled(!isEnabled)
     }
 }
