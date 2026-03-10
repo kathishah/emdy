@@ -4,6 +4,7 @@ import SwiftUI
 struct EmdyApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var showDefaultHandlerPrompt = false
+    @State private var showShortcutSheet = false
 
     var body: some Scene {
         DocumentGroup(viewing: MarkdownDocument.self) { file in
@@ -11,6 +12,12 @@ struct EmdyApp: App {
                 .configureWindow()
                 .sheet(isPresented: $showDefaultHandlerPrompt) {
                     DefaultHandlerSheet(isPresented: $showDefaultHandlerPrompt)
+                }
+                .sheet(isPresented: $showShortcutSheet) {
+                    ShortcutCheatSheet(isPresented: $showShortcutSheet)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .showShortcutCheatSheet)) { _ in
+                    showShortcutSheet = true
                 }
                 .onAppear {
                     if DefaultHandlerService.shouldShowPrompt {

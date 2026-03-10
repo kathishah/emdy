@@ -58,6 +58,22 @@ struct EmdyMenuCommands: Commands {
             .keyboardShortcut("e", modifiers: [.command, .shift])
         }
 
+        CommandGroup(replacing: .help) {
+            Button("Emdy Help") {
+                NSApplication.shared.showHelp(nil)
+            }
+
+            Divider()
+
+            Button("Keyboard Shortcuts") {
+                NotificationCenter.default.post(name: .showShortcutCheatSheet, object: nil)
+            }
+
+            Button("Welcome to Emdy") {
+                NotificationCenter.default.post(name: .showWelcome, object: nil)
+            }
+        }
+
         CommandGroup(after: .textFormatting) {
             Section {
                 Button("Zoom In") {
@@ -128,4 +144,6 @@ extension Notification.Name {
     static let findNext = Notification.Name("emdy.findNext")
     static let findPrevious = Notification.Name("emdy.findPrevious")
     static let copyNotification = Notification.Name("emdy.copy")
+    static let showShortcutCheatSheet = Notification.Name("emdy.showShortcutCheatSheet")
+    static let showWelcome = Notification.Name("emdy.showWelcome")
 }
