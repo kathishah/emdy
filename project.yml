@@ -26,6 +26,10 @@ targets:
       - path: Emdy
         excludes:
           - "**/.DS_Store"
+          - "Resources/Emdy.help"
+      - path: Emdy/Resources/Emdy.help
+        type: folder
+        buildPhase: resources
     resources:
       - path: Emdy/Fonts
         buildPhase: resources
