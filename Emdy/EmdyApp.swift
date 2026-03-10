@@ -4,9 +4,6 @@ import SwiftUI
 struct EmdyApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var showDefaultHandlerPrompt = false
-    @State private var showShortcutSheet = false
-    @State private var showWelcome = false
-
     var body: some Scene {
         DocumentGroup(viewing: MarkdownDocument.self) { file in
             DocumentContentView(document: file.document, fileURL: file.fileURL)
@@ -14,25 +11,9 @@ struct EmdyApp: App {
                 .sheet(isPresented: $showDefaultHandlerPrompt) {
                     DefaultHandlerSheet(isPresented: $showDefaultHandlerPrompt)
                 }
-                .sheet(isPresented: $showShortcutSheet) {
-                    ShortcutCheatSheet(isPresented: $showShortcutSheet)
-                }
-                .sheet(isPresented: $showWelcome) {
-                    WelcomeView(isPresented: $showWelcome)
-                }
-                .onReceive(NotificationCenter.default.publisher(for: .showShortcutCheatSheet)) { _ in
-                    showShortcutSheet = true
-                }
-                .onReceive(NotificationCenter.default.publisher(for: .showWelcome)) { _ in
-                    showWelcome = true
-                }
                 .onAppear {
                     if DefaultHandlerService.shouldShowPrompt {
                         showDefaultHandlerPrompt = true
-                    }
-                    if !UserDefaults.standard.bool(forKey: "hasShownWelcome") {
-                        showWelcome = true
-                        UserDefaults.standard.set(true, forKey: "hasShownWelcome")
                     }
                 }
         }

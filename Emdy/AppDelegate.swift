@@ -4,6 +4,8 @@ import SwiftUI
 class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var directoryWindow: NSWindow?
+    private var shortcutWindow: NSWindow?
+    private var welcomeWindow: NSWindow?
     private var currentPanel: NSOpenPanel?
     private var panelIsOpen = false
     private var panelDismissed = false
@@ -15,7 +17,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var strayPanelTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        showOpenPanel()
+        // Listen for help-related notifications
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(showShortcutCheatSheet),
+            name: .showShortcutCheatSheet, object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(showWelcomeScreen),
+            name: .showWelcome, object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(handleOpenDirectory(_:)),
+            name: .openDirectory, object: nil
+        )
+
+        // Show welcome on first launch (skip open panel), otherwise show open panel
+        if !UserDefaults.standard.bool(forKey: "hasShownWelcome") {
+            UserDefaults.standard.set(true, forKey: "hasShownWelcome")
+            DispatchQueue.main.async { [weak self] in
+                self?.showWelcomeScreen()
+            }
+        } else {
+            showOpenPanel()
+        }
         // DocumentGroup may spawn its own NSOpenPanel after launch.
         // Poll briefly to close any stray panels it creates.
         strayPanelTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] timer in
@@ -54,7 +78,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if !flag && !panelDismissed {
+        if !flag && !panelDismissed && !(welcomeWindow?.isVisible ?? false) {
             showOpenPanel()
         }
         // Reset so a future dock-click can show the panel again.
@@ -131,6 +155,53 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Keep a strong reference so the window isn't deallocated.
         directoryWindow = window
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    @objc private func handleOpenDirectory(_ notification: Notification) {
+        guard let url = notification.object as? URL else { return }
+        openDirectoryBrowser(url: url)
+    }
+
+    // MARK: - Help windows
+
+    @objc func showShortcutCheatSheet() {
+        if let existing = shortcutWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        let controller = NSHostingController(rootView: ShortcutCheatSheet())
+        let window = NSWindow(
+            contentRect: .zero,
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentViewController = controller
+        window.title = "Keyboard Shortcuts"
+        window.center()
+        shortcutWindow = window
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    @objc func showWelcomeScreen() {
+        if let existing = welcomeWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        let controller = NSHostingController(rootView: WelcomeView())
+        let window = NSWindow(
+            contentRect: .zero,
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentViewController = controller
+        window.title = "Welcome to Emdy"
+        window.center()
+        welcomeWindow = window
         window.makeKeyAndOrderFront(nil)
     }
 }

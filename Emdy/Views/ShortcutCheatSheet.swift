@@ -47,7 +47,6 @@ private let shortcutCategories: [ShortcutCategory] = [
 // MARK: - View
 
 struct ShortcutCheatSheet: View {
-    @Binding var isPresented: Bool
     @Environment(\.colorScheme) private var colorScheme
 
     private var palette: ColorPalette { .current(for: colorScheme) }
@@ -68,7 +67,7 @@ struct ShortcutCheatSheet: View {
             }
 
             Button("Done") {
-                isPresented = false
+                NSApp.keyWindow?.close()
             }
             .keyboardShortcut(.cancelAction)
         }

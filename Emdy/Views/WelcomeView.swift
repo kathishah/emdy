@@ -1,10 +1,7 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct WelcomeView: View {
-    @Binding var isPresented: Bool
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.openWindow) private var openWindow
 
     private var palette: ColorPalette { .current(for: colorScheme) }
 
@@ -56,7 +53,7 @@ struct WelcomeView: View {
                 }
 
                 Button("Get Started") {
-                    isPresented = false
+                    NSApp.keyWindow?.close()
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color(nsColor: palette.accent))
@@ -89,24 +86,26 @@ struct WelcomeView: View {
     }
 
     private func openFile() {
+        let welcomeWindow = NSApp.keyWindow
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
-            isPresented = false
+            welcomeWindow?.close()
             NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { _, _, _ in }
         }
     }
 
     private func openFolder() {
+        let welcomeWindow = NSApp.keyWindow
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
-        panel.begin { [openWindow] response in
+        panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
-            isPresented = false
-            openWindow(value: url)
+            welcomeWindow?.close()
+            NotificationCenter.default.post(name: .openDirectory, object: url)
         }
     }
 }
