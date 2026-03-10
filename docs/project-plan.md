@@ -73,7 +73,7 @@ The current feature set was designed from assumptions about what a "Markdown rea
 - [ ] Empty state when a directory has no Markdown files
 - [ ] File-deleted notice when an open file is removed from disk
 - [ ] License key system — validation, activation, and gating in-app
-- [ ] User-facing help documentation (accessible from Help menu)
+- [x] User-facing help documentation (accessible from Help menu)
 
 ### Legal
 - [ ] Draft EULA (End User License Agreement)
@@ -154,6 +154,11 @@ The current feature set was designed from assumptions about what a "Markdown rea
 - [x] Empty state view
 - [x] Toolbar with consistent spacing (4px rhythm, `ControlGroup` wrapping, `toolbar(id:)`)
 - [x] Theme switching lag fix — sidebar, title bar, and minimap now update immediately on theme change (recursive appearance propagation + `displayIfNeeded`)
+
+### Help & Onboarding
+- [x] macOS Help Book — HTML help pages (opening files, navigating, display settings, sharing, keyboard shortcuts) served in an in-app WKWebView window
+- [x] Keyboard shortcut cheat sheet — SwiftUI panel accessible from Help menu, shows all shortcuts grouped by category
+- [x] Welcome screen — first-launch onboarding with feature highlights and Open File/Folder actions, re-accessible from Help menu
 
 ### Tests
 - [x] Markdown renderer tests (`EmdyTests/MarkdownRendererTests.swift`)

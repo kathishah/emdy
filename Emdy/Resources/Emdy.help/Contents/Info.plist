@@ -21,7 +21,7 @@
     <key>HPDBookAccessPath</key>
     <string>en.lproj/</string>
     <key>HPDBookIndexPath</key>
-    <string>search.helpindex</string>
+    <string>search.cshelpindex</string>
     <key>HPDBookTitle</key>
     <string>Emdy Help</string>
     <key>HPDBookType</key>

@@ -1,11 +1,13 @@
 import AppKit
 import SwiftUI
+import WebKit
 
 class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var directoryWindow: NSWindow?
     private var shortcutWindow: NSWindow?
     private var welcomeWindow: NSWindow?
+    private var helpWindow: NSWindow?
     private var currentPanel: NSOpenPanel?
     private var panelIsOpen = false
     private var panelDismissed = false
@@ -29,6 +31,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(
             self, selector: #selector(handleOpenDirectory(_:)),
             name: .openDirectory, object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(showHelpWindow),
+            name: .showHelp, object: nil
         )
 
         // Show welcome on first launch (skip open panel), otherwise show open panel
@@ -200,8 +206,40 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
         window.contentViewController = controller
         window.title = "Welcome to Emdy"
+        // Force layout so the window knows its content size before centering
+        controller.view.layoutSubtreeIfNeeded()
+        window.setContentSize(controller.view.fittingSize)
         window.center()
         welcomeWindow = window
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    @objc func showHelpWindow() {
+        if let existing = helpWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        guard let helpBundle = Bundle.main.url(forResource: "Emdy", withExtension: "help"),
+              let indexURL = helpBundle
+                .appendingPathComponent("Contents/Resources/en.lproj/index.html") as URL? else {
+            return
+        }
+
+        let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 640, height: 520))
+        webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 640, height: 520),
+            styleMask: [.titled, .closable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView = webView
+        window.title = "Emdy Help"
+        window.minSize = NSSize(width: 400, height: 300)
+        window.center()
+        helpWindow = window
         window.makeKeyAndOrderFront(nil)
     }
 }

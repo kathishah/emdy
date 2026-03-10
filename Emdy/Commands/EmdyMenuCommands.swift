@@ -60,7 +60,7 @@ struct EmdyMenuCommands: Commands {
 
         CommandGroup(replacing: .help) {
             Button("Emdy Help") {
-                NSApplication.shared.showHelp(nil)
+                NotificationCenter.default.post(name: .showHelp, object: nil)
             }
 
             Divider()
@@ -144,6 +144,7 @@ extension Notification.Name {
     static let findNext = Notification.Name("emdy.findNext")
     static let findPrevious = Notification.Name("emdy.findPrevious")
     static let copyNotification = Notification.Name("emdy.copy")
+    static let showHelp = Notification.Name("emdy.showHelp")
     static let showShortcutCheatSheet = Notification.Name("emdy.showShortcutCheatSheet")
     static let showWelcome = Notification.Name("emdy.showWelcome")
 }
