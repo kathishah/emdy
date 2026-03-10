@@ -16,7 +16,7 @@ struct HeadingNavigator: View {
                     } label: {
                         Text(heading.title)
                             .font(.system(size: fontSize(for: heading.level), weight: weight(for: heading.level)))
-                            .foregroundStyle(Color(nsColor: heading.level <= 2 ? palette.headline : palette.medium))
+                            .foregroundStyle(Color(nsColor: palette.headline).opacity(heading.level <= 2 ? 1.0 : 0.75))
                             .lineLimit(1)
                             .truncationMode(.tail)
                             .frame(maxWidth: .infinity, alignment: .leading)
