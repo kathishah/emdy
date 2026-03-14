@@ -82,9 +82,9 @@ extension ColorPalette {
             codeBackground: .white, codeText: bdy,
             syntaxKeyword: NSColor(hex: "#8B5A3C"),
             syntaxString: NSColor(hex: "#5F6B2D"),
-            syntaxComment: mut,
+            syntaxComment: NSColor(hex: "#999999"),
             syntaxNumber: lnk,
-            blockquoteBorder: brd, blockquoteText: med,
+            blockquoteBorder: brd, blockquoteText: NSColor(hex: "#808080"),
             sidebarSelection: brd
         )
     }
@@ -113,9 +113,9 @@ extension ColorPalette {
             codeBackground: NSColor(hex: "#131314"), codeText: bdy,
             syntaxKeyword: NSColor(hex: "#D4A574"),
             syntaxString: NSColor(hex: "#8A9B50"),
-            syntaxComment: mut,
+            syntaxComment: NSColor(hex: "#707070"),
             syntaxNumber: lnk,
-            blockquoteBorder: brd, blockquoteText: med,
+            blockquoteBorder: brd, blockquoteText: NSColor(hex: "#909090"),
             sidebarSelection: brd
         )
     }
