@@ -92,7 +92,7 @@ The current feature set was designed from assumptions about what a "Markdown rea
 - [ ] Direct download website
 
 ### Polish & QA
-- [ ] Test on macOS light and dark mode across all views (sidebar/titlebar lag fixed — see Completed)
+- [x] Test on macOS light and dark mode across all views (sidebar/titlebar lag fixed — see Completed; dark mode borders and text colors fixed)
 - [x] Keyboard shortcuts audit and implementation (ensure all standard shortcuts work, add any missing)
 - [ ] Accessibility pass (VoiceOver, keyboard navigation)
 - [ ] Performance testing with large Markdown files
