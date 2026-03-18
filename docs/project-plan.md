@@ -96,24 +96,15 @@ The current feature set was designed from assumptions about what a "Markdown rea
 - [x] Keyboard shortcuts audit and implementation (ensure all standard shortcuts work, add any missing)
 - [ ] Accessibility pass (VoiceOver, keyboard navigation)
 - [ ] Performance testing with large Markdown files
-- [ ] Expand test coverage beyond `MarkdownRendererTests`
+- [ ] Add test coverage for Electron app
 
-### React + Electron Exploration
-- [x] Evaluate feasibility of a cross-platform Emdy build using React + Electron
-- [x] Prototype: scaffold an Electron app with React that renders Markdown (GFM)
-- [x] Feature parity assessment — map current Swift/SwiftUI features to Electron equivalents
+### Stack Transition: Swift → Electron
+- [x] Evaluate feasibility of a cross-platform build using React + Electron
+- [x] Prototype with full feature parity (GFM, syntax highlighting, minimap, search, export, themes)
+- [x] Implement token-based design system (4px grid, two color themes, light/dark modes)
+- [x] Decision: **replace native Swift app with Electron** — faster iteration, cross-platform potential
 - [ ] Cross-platform testing (macOS, Windows, Linux)
-- [ ] Performance comparison vs. native macOS app (startup time, memory, rendering)
 - [ ] Distribution strategy — packaging, auto-update, code signing per platform
-- [ ] Decision: complement the native app, replace it, or drop the exploration
-
-#### Electron App — Visual & UX Fixes
-- [ ] Fix minimap scroll behavior — the minimap panel itself scrolls with content instead of staying fixed with an internal viewport indicator that tracks scroll position (match native app behavior)
-- [ ] Fix traffic light buttons overlapping sidebar toggle and open file/folder icons — add left padding to toolbar to clear the window control buttons
-- [ ] Fix window dragging — the titlebar area should be draggable to move the window; ensure `-webkit-app-region: drag` covers the full toolbar background while keeping buttons clickable with `no-drag`
-- [ ] Increase toolbar icon sizes — current icons are too small to read comfortably; bump from 14px to 16–18px and review hit targets
-- [ ] Fix minimap colors — the colored rectangles look off; use subtler, more muted tones that reflect the actual content hierarchy without clashing with the palette
-- [ ] Rebalance color palette — the current light theme leans too heavily into brown/orange warmth; incorporate more of the slate blues from the Dieter Rams palette (`--info: #5A6D7A`, the blue-grays) into backgrounds, borders, and secondary UI elements to create a cooler, more balanced feel while keeping the warm accent
 
 ### Marketing & Launch
 - [ ] Marketing site design and build (visual directions started in `visual-design.pen`)

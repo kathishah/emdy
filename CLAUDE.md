@@ -4,21 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Emdy is a minimal Markdown reader app for macOS. It is intentionally limited in scope — it reads and renders Markdown files, nothing more.
+Emdy is a minimal Markdown reader app. It reads and renders Markdown files, nothing more.
 
-### Core Features (exhaustive list)
-- Open and render Markdown files (GFM) as formatted text
-- Open a directory to browse its Markdown files via a sidebar (recursive, with expandable folders)
-- Find in page (`Cmd F`) with incremental search
-- Minimap for document navigation (toggle via toolbar button)
-- Syntax highlighting for code blocks (language-aware)
-- Enlarge/reduce document display size
-- Switch font style: serif, sans-serif, monospace
-- Theme switcher: Light, Dark, or System (dark palette is warm, Braun-inspired)
-- Optimal content width: text capped at ~680px, centered, with background filling the full window
-- Copy selected text in RTF format for pasting into other apps
-- Export as PDF (via dedicated save dialog) and Print (via standard macOS print dialog)
-- Open Recent / reopen last file
+### Core Features
+- Open a directory to browse its Markdown files via a flat sidebar list
+- Open and render Markdown files (GFM) with syntax highlighting
+- Command palette search across file names and content (Cmd+F)
+- Canvas-based minimap for document navigation
+- Zoom controls (Cmd+/Cmd-)
+- Font switcher: Sans / Serif / Mono (IBM Plex family)
+- Two color themes: Warm (Dieter Rams / Braun orange) and Cool (slate blue), each with Light/Dark/System appearance
+- Token-based design system with strict 4px grid
+- Content width capped at 680px, centered
+- Copy as formatted HTML, export as PDF, print
+- File watching with live reload on external changes
+- File context menu: copy, download PDF, show in Finder, open in new window
+- Status bar with settings gear, file path, word count
+- Responsive toolbar that collapses into overflow menu on narrow windows
+- Native macOS menus with full keyboard shortcut support
 
 ### Non-goals
 - No Markdown editing or writing
@@ -27,64 +30,85 @@ Emdy is a minimal Markdown reader app for macOS. It is intentionally limited in 
 
 ## Tech Stack
 
-macOS native app (Swift, SwiftUI). This is not an Electron/web app.
+- **Electron Forge** with Vite (fast HMR, official tooling)
+- **React 18** + **TypeScript**
+- **react-markdown** + **remark-gfm** for GFM rendering
+- **react-syntax-highlighter** (Prism) for code blocks
+- **Tailwind CSS v3** for utility classes (most styling via CSS custom properties)
+- **Lucide React** for icons (16px, strokeWidth 1.5)
+- **chokidar** for file watching
+- IBM Plex fonts bundled as static TTFs
 
 ## Build & Run
 
 ```bash
-# Generate Xcode project (after adding/removing files)
-xcodegen generate
+cd electron
 
-# Build
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme Emdy -configuration Debug build
+# Install dependencies
+npm install
 
-# Run tests
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme Emdy test
+# Run in development (with HMR for renderer changes)
+npm start
 
-# Run a single test
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme Emdy -only-testing:EmdyTests/TestClassName/testMethodName test
+# Package for distribution
+npm run package
+
+# Type-check
+npx tsc --noEmit --skipLibCheck
 ```
-
-The project uses **xcodegen** — `project.yml` is the source of truth, the `.xcodeproj` is generated and gitignored. Run `xcodegen generate` after adding or removing files.
 
 ## Architecture
 
-The app follows a straightforward SwiftUI document-based app pattern:
+### Process Model
+- **Main process** (`src/main/`): File I/O, directory scanning, file watching, native menus, PDF/print, window management, settings persistence
+- **Renderer process** (`src/renderer/`): React UI — Markdown view, sidebar, toolbar, minimap, command palette, settings modal
+- **Preload** (`src/preload/`): `contextBridge` exposing typed IPC API to renderer
 
-- **App entry point**: Standard SwiftUI `@main` App struct using `DocumentGroup` for file handling
-- **Markdown parsing**: Converts raw Markdown text to an attributed string or SwiftUI view hierarchy for rendering
-- **Display controls**: View-level state for font family (serif/sans-serif/monospace), zoom level, and theme (light/dark/system) via `DisplaySettings` (persisted to UserDefaults)
-- **Color palette**: `ColorPalette` struct with static `light` and `dark` instances; resolved via `current(dark:)` or `current(for: ColorScheme)`
-- **Content width**: Text capped at 680px and centered; insets recomputed on window resize via a frame-change observer in `MarkdownTextView`
-- **RTF copy**: Converts the rendered attributed string to RTF data and places it on `NSPasteboard`
-- **Find in page**: Uses the native `NSTextFinder` find bar via `EmdyTextView`; triggered by `Cmd F` or toolbar button
-- **Minimap**: `MinimapView` renders a scaled representation of the document using colored rectangles (not text). 140px wide, sticky offset scrolling, viewport highlight uses `NSColor.controlAccentColor`. Click to jump, drag to scroll. Toggle visibility via toolbar or View menu.
-- **Syntax highlighting**: `SyntaxHighlighter` applies regex-based coloring to fenced code blocks. Supports Swift, Python, JS/TS, Go, Rust, Java/Kotlin, C/C++, Ruby, Bash, SQL, and a generic fallback. Colors defined in `ColorPalette` (syntaxKeyword, syntaxString, syntaxComment, syntaxNumber).
-- **Sidebar width**: Constrained to 200–320px (ideal 240) via `navigationSplitViewColumnWidth` plus a `SidebarWidthSetter` that overrides any cached NSSplitView state
+### Design System
+All visual values flow from TypeScript tokens through a theme provider into CSS custom properties:
+
+- **`lib/design-tokens.ts`** — Spacing (4px grid), font sizes, radii, layout dimensions, transitions, shadows
+- **`lib/color-themes.ts`** — Warm and Cool color themes, each with light and dark variants (24 semantic tokens per variant)
+- **`lib/theme-provider.ts`** — `applyTheme()` sets all CSS custom properties on `<html>`. Called once at startup and on every theme change
+- **`lib/prism-theme.ts`** — `buildPrismTheme(colors)` generates Prism syntax theme from the active color scale
+
+### Key Conventions
+- **Strict 4px grid**: Every spacing, padding, margin, and sizing value is a multiple of 4px. Only exceptions: 1px (borders) and 2px (fine detail)
+- **No hardcoded values in CSS**: All colors, sizes, radii, shadows, and transitions reference CSS custom properties set by the token system
+- **Font size tokens use `--fs-*` prefix** (not `--text-*`) to avoid collision with color tokens like `--text-primary`
+- **Radii**: `--radius-sm` (4px) for buttons, `--radius-md` (8px) for code blocks/images, `--radius-lg` (12px) for modals
+- **Icons**: All from Lucide React, rendered at `size={16} strokeWidth={1.5}`
+- **Toolbar buttons**: `-webkit-app-region: no-drag` on interactive elements; titlebar background is draggable
 
 ## Project Status
 
-The core app is functional. Before continuing feature development, we are running a structured user research phase to validate assumptions about the problem, audience, solution form factor, feature set, and competitive landscape. See `docs/project-plan.md` § User Research for the full research plan and `docs/design-brief.md` for the existing evidence baseline.
+The Electron prototype is functional with feature parity to the previous native Swift app. The project transitioned from Swift/SwiftUI to Electron/React for faster iteration. User research phase is ongoing — see `docs/project-plan.md`.
 
 ## Key Files
 
 | Area | Files |
 |------|-------|
-| App entry | `Emdy/EmdyApp.swift` |
-| Model | `Model/DisplaySettings.swift` (FontFamily, AppTheme, DisplaySettings) |
-| Rendering | `Renderer/MarkdownRenderer.swift`, `Renderer/ColorPalette.swift`, `Renderer/FontProvider.swift`, `Renderer/ImageResolver.swift`, `Renderer/SyntaxHighlighter.swift` |
-| Main views | `Views/DocumentContentView.swift`, `Views/DirectoryBrowserView.swift`, `Views/MarkdownTextView.swift`, `Views/MinimapView.swift`, `Views/EmdyTextView.swift` |
-| Toolbar | `Views/Toolbar/ZoomControls.swift`, `Views/Toolbar/FontPicker.swift`, `Views/Toolbar/ThemePicker.swift`, `Views/Toolbar/ActionButtons.swift` |
-| Commands | `Commands/EmdyMenuCommands.swift` |
-| Tests | `EmdyTests/MarkdownRendererTests.swift` |
+| App entry (main) | `electron/src/main/index.ts` |
+| IPC handlers | `electron/src/main/ipc-handlers.ts` |
+| Menus | `electron/src/main/menu.ts` |
+| Preload | `electron/src/preload/preload.ts` |
+| App shell | `electron/src/renderer/App.tsx` |
+| Design tokens | `electron/src/renderer/lib/design-tokens.ts`, `color-themes.ts`, `theme-provider.ts` |
+| Markdown | `electron/src/renderer/components/MarkdownView.tsx` |
+| Sidebar | `electron/src/renderer/components/DirectoryBrowser.tsx` |
+| Toolbar | `electron/src/renderer/components/Toolbar.tsx` |
+| Minimap | `electron/src/renderer/components/Minimap.tsx` |
+| Search | `electron/src/renderer/components/CommandPalette.tsx` |
+| Settings | `electron/src/renderer/components/SettingsModal.tsx` |
+| Hooks | `electron/src/renderer/hooks/useDisplaySettings.ts`, `useFileWatcher.ts`, `useKeyboardShortcuts.ts` |
+| Types | `electron/src/renderer/lib/types.ts` |
+| Styles | `electron/src/renderer/styles/global.css` |
 | Research & planning | `docs/project-plan.md`, `docs/design-brief.md`, `docs/user-journeys.md`, `docs/service-blueprint.md`, `docs/system-architecture.md` |
 
 ## Conventions
 
-- Keep the app minimal. Resist adding features beyond the core set listed above.
-- Use native macOS APIs (AppKit/SwiftUI) — no third-party dependencies unless absolutely necessary for Markdown parsing.
-- Support macOS standard keyboard shortcuts (Cmd+/- for zoom, Cmd+C for copy, Cmd+F for find).
-- Toolbar sizing follows a 4px rhythm (text 12px, icons 10px, padding in multiples of 4).
-- `ColorPalette` is a struct, not an enum. Both light and dark variants must be kept in sync when adding new semantic colors.
-- All three font families (IBM Plex Sans, IBM Plex Serif, IBM Plex Mono) are bundled as static `.ttf` files in `Emdy/Fonts/`. Do not use variable fonts — macOS `ATSApplicationFontsPath` does not reliably register them. When adding or changing fonts, use static weights and update `FontProvider.swift` with the correct PostScript names.
-- **Toolbar items**: Use `toolbar(id:)` with `ToolbarItem(id:)` for consistent spacing. Standalone toolbar buttons must be wrapped in a single-item `ControlGroup` to prevent macOS from merging adjacent buttons into a segmented control and to ensure uniform inter-item spacing. Menus and multi-item ControlGroups are naturally separate.
+- Keep the app minimal. Resist adding features beyond the core set.
+- All sizing on a strict 4px grid. Check `design-tokens.ts` before adding new values.
+- Colors only via the theme system — never hardcode hex values in CSS or components.
+- IBM Plex fonts bundled as static `.ttf` files in `electron/src/renderer/fonts/`.
+- Support macOS standard keyboard shortcuts (Cmd+/- for zoom, Cmd+F for search, Cmd+O for open).
