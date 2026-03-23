@@ -61,10 +61,13 @@ export function Minimap({ visible, contentRef, scrollContainerRef }: MinimapProp
     setViewportHeight(vpHeight);
 
     // Auto-scroll minimap to keep viewport indicator visible
-    const minimapVisibleHeight = minimap.clientHeight;
-    const vpCenter = vpTop + vpHeight / 2;
-    const targetScroll = vpCenter - minimapVisibleHeight / 2;
-    minimap.scrollTop = Math.max(0, targetScroll);
+    // Skip during drag to prevent feedback loop (drag → scroll → auto-scroll → amplified drag)
+    if (!isDragging.current) {
+      const minimapVisibleHeight = minimap.clientHeight;
+      const vpCenter = vpTop + vpHeight / 2;
+      const targetScroll = vpCenter - minimapVisibleHeight / 2;
+      minimap.scrollTop = Math.max(0, targetScroll);
+    }
   }, [scrollContainerRef, contentRef]);
 
   // Sync content on mount and when DOM changes
