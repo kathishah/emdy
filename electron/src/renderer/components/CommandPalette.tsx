@@ -132,7 +132,13 @@ export function CommandPalette({ visible, onClose, onFileSelect }: CommandPalett
 
   return (
     <div className={`command-palette-overlay${active ? ' active' : ''}`} onClick={onClose}>
-      <div className={`command-palette${active ? ' active' : ''}`} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`command-palette${active ? ' active' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search files and content"
+      >
         <div className="command-palette-input-wrapper">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="command-palette-icon">
             <circle cx="6.5" cy="6.5" r="4" />
@@ -146,15 +152,20 @@ export function CommandPalette({ visible, onClose, onFileSelect }: CommandPalett
             onKeyDown={handleKeyDown}
             placeholder="Search files and content..."
             className="command-palette-input"
+            role="combobox"
+            aria-expanded={flatItems.length > 0}
+            aria-controls="command-palette-listbox"
+            aria-activedescendant={selectedIndex >= 0 && flatItems.length > 0 ? `command-palette-option-${selectedIndex}` : undefined}
+            aria-autocomplete="list"
           />
           {searching && <span className="command-palette-spinner" />}
         </div>
         {flatItems.length > 0 && (
-          <div className="command-palette-results">
+          <div className="command-palette-results" role="listbox" id="command-palette-listbox">
             {flatItems.map((item, i) => {
               if (item.kind === 'header') {
                 return (
-                  <div key={`header-${item.label}`} className="command-palette-group-header">
+                  <div key={`header-${item.label}`} className="command-palette-group-header" role="presentation">
                     {item.label}
                   </div>
                 );
@@ -167,6 +178,9 @@ export function CommandPalette({ visible, onClose, onFileSelect }: CommandPalett
                   className={`command-palette-result${isSelected ? ' selected' : ''}`}
                   onClick={() => handleSelect(item.result)}
                   onMouseEnter={() => setSelectedIndex(idx)}
+                  role="option"
+                  id={`command-palette-option-${idx}`}
+                  aria-selected={isSelected}
                 >
                   <span className="command-palette-result-file">{item.result.fileName}</span>
                   {item.result.matchLine && (
