@@ -11,7 +11,7 @@ import { WelcomeView } from './components/WelcomeView';
 import { SkipLink } from './components/SkipLink';
 import { ToastNotification, type Toast } from './components/ToastNotification';
 import { FileContextMenu } from './components/FileContextMenu';
-import { AnnounceProvider } from './hooks/useAnnounce';
+import { AnnounceProvider, useAnnounce } from './hooks/useAnnounce';
 import { useDisplaySettings } from './hooks/useDisplaySettings';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useFileWatcher } from './hooks/useFileWatcher';
@@ -44,6 +44,7 @@ export function App() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const display = useDisplaySettings();
+  const { announce, announceAssertive } = useAnnounce();
 
   const addToast = useCallback((message: string, type: Toast['type'] = 'info') => {
     const id = ++toastId;
@@ -53,6 +54,22 @@ export function App() {
   const dismissToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  const prevZoomRef = useRef(display.zoom);
+  useEffect(() => {
+    if (prevZoomRef.current !== display.zoom) {
+      announce(`Zoom ${Math.round(display.zoom * 100)}%`);
+      prevZoomRef.current = display.zoom;
+    }
+  }, [display.zoom, announce]);
+
+  const prevFileRef = useRef(filePath);
+  useEffect(() => {
+    if (filePath && prevFileRef.current !== filePath) {
+      announce(`Opened ${filePath.split('/').pop()}`);
+    }
+    prevFileRef.current = filePath;
+  }, [filePath, announce]);
 
   const handleOpen = useCallback(async () => {
     try {
@@ -95,8 +112,9 @@ export function App() {
     } catch {
       setFileError('Could not read the file.');
       addToast('Failed to read file', 'error');
+      announceAssertive('Error: could not read file');
     }
-  }, [addToast]);
+  }, [addToast, announceAssertive]);
 
   const handleExportPDF = useCallback(async () => {
     if (!contentRef.current || !filePath) return;
@@ -146,6 +164,7 @@ export function App() {
     onDeleted: () => {
       setFileDeleted(true);
       addToast('File was deleted', 'error');
+      announceAssertive('File was deleted');
     },
   });
 
