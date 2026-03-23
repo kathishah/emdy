@@ -1,5 +1,5 @@
-const ENABLE_PERF = typeof window !== 'undefined' &&
-  new URLSearchParams(window.location.search).has('perf');
+// Set to true for profiling, or append ?perf to the renderer URL
+const ENABLE_PERF = false;
 
 export function perfMark(label: string) {
   if (!ENABLE_PERF) return;
