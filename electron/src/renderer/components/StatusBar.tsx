@@ -21,7 +21,7 @@ export function StatusBar({ filePath, rootPath, content }: StatusBarProps) {
   }, [filePath, rootPath]);
 
   return (
-    <div className="status-bar">
+    <div className="status-bar" role="status">
       {displayPath && <span className="status-path" title={filePath || ''}>{displayPath}</span>}
       <div className="status-right">
         {content && <span className="status-words">{wordCount.toLocaleString()} words</span>}

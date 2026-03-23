@@ -98,7 +98,7 @@ export function Toolbar({
   const currentFont = fonts.find((f) => f.value === fontFamily) || fonts[0];
 
   return (
-    <div className="toolbar">
+    <div className="toolbar" role="toolbar" aria-label="Document tools">
       {/* Left: sidebar toggle + filename */}
       <div className="toolbar-left">
         {hasSidebar && (
