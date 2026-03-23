@@ -26,7 +26,7 @@ export function DirectoryBrowser({ entries, activePath, onFileSelect, onFileCont
   return (
     <div className="sidebar">
       <div className="sidebar-heading">Files</div>
-      <div className="sidebar-tree">
+      <ul className="sidebar-tree" role="tree">
         {rootFiles.map((file) => (
           <FileItem
             key={file.path}
@@ -48,7 +48,7 @@ export function DirectoryBrowser({ entries, activePath, onFileSelect, onFileCont
         {rootFiles.length === 0 && folders.length === 0 && (
           <div className="sidebar-empty">No Markdown files</div>
         )}
-      </div>
+      </ul>
     </div>
   );
 }
@@ -61,14 +61,16 @@ function FileItem({ entry, activePath, nested, onSelect, onContextMenu }: {
   onContextMenu: (e: React.MouseEvent, path: string) => void;
 }) {
   return (
-    <button
-      className={`tree-item${nested ? ' tree-item-nested' : ''}${entry.path === activePath ? ' active' : ''}`}
-      onClick={() => onSelect(entry.path)}
-      onContextMenu={(e) => onContextMenu(e, entry.path)}
-      title={entry.path}
-    >
-      <span className="tree-item-name">{entry.name}</span>
-    </button>
+    <li role="treeitem" aria-current={entry.path === activePath ? 'page' : undefined}>
+      <button
+        className={`tree-item${nested ? ' tree-item-nested' : ''}${entry.path === activePath ? ' active' : ''}`}
+        onClick={() => onSelect(entry.path)}
+        onContextMenu={(e) => onContextMenu(e, entry.path)}
+        title={entry.path}
+      >
+        <span className="tree-item-name">{entry.name}</span>
+      </button>
+    </li>
   );
 }
 
@@ -97,8 +99,8 @@ function FolderItem({ entry, activePath, onSelect, onContextMenu }: {
   if (totalCount === 0) return null;
 
   return (
-    <div className="tree-folder-group">
-      <button className="tree-folder" onClick={() => setExpanded((v) => !v)}>
+    <li role="treeitem" aria-expanded={expanded} className="tree-folder-group">
+      <button className="tree-folder" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
         <ChevronRight
           size={12}
           strokeWidth={1.5}
@@ -108,7 +110,7 @@ function FolderItem({ entry, activePath, onSelect, onContextMenu }: {
         <span className="badge">{totalCount}</span>
       </button>
       {expanded && (
-        <>
+        <ul role="group">
           {files.map((file) => (
             <FileItem
               key={file.path}
@@ -128,9 +130,9 @@ function FolderItem({ entry, activePath, onSelect, onContextMenu }: {
               onContextMenu={onContextMenu}
             />
           ))}
-        </>
+        </ul>
       )}
-    </div>
+    </li>
   );
 }
 
