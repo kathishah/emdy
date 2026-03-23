@@ -85,18 +85,27 @@ export const MarkdownView = React.memo(function MarkdownView({ content, colors, 
   );
 });
 
+const MAX_HIGHLIGHTED_LINES = 200;
+
 function CodeBlock({ language, codeTheme, children }: {
   language: string;
   codeTheme: Record<string, React.CSSProperties>;
   children: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(children);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, [children]);
+
+  const lineCount = children.split('\n').length;
+  const isTruncated = !showAll && lineCount > MAX_HIGHLIGHTED_LINES;
+  const displayContent = isTruncated
+    ? children.split('\n').slice(0, MAX_HIGHLIGHTED_LINES).join('\n')
+    : children;
 
   return (
     <div className="code-block-wrapper">
@@ -108,8 +117,13 @@ function CodeBlock({ language, codeTheme, children }: {
         language={language}
         PreTag="div"
       >
-        {children}
+        {displayContent}
       </SyntaxHighlighter>
+      {isTruncated && (
+        <button className="code-block-show-all" onClick={() => setShowAll(true)}>
+          Show all {lineCount} lines
+        </button>
+      )}
     </div>
   );
 }

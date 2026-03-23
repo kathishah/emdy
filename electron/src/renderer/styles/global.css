@@ -1067,6 +1067,19 @@ input:focus:not(:focus-visible) {
 .code-block-wrapper:hover .code-block-copy { opacity: 1; }
 .code-block-copy:hover { color: var(--text-primary); background: var(--border); }
 
+.code-block-show-all {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+.code-block-show-all:hover { color: var(--text-primary); }
+
 .markdown-body pre {
   background: var(--bg-code);
   border-radius: var(--radius-md);

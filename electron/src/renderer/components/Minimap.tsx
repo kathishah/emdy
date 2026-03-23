@@ -102,11 +102,17 @@ export function Minimap({ visible, contentRef, scrollContainerRef }: MinimapProp
     const content = contentRef.current;
     if (!content) return () => cancelIdleCallback(id);
 
-    const observer = new MutationObserver(throttledSyncContent);
-    observer.observe(content, { childList: true, subtree: true, characterData: true });
+    // Delay observer setup so it doesn't fire during React's initial render
+    let observer: MutationObserver | null = null;
+    const observerTimer = setTimeout(() => {
+      observer = new MutationObserver(throttledSyncContent);
+      observer.observe(content, { childList: true, subtree: true, characterData: true });
+    }, 3000);
+
     return () => {
       cancelIdleCallback(id);
-      observer.disconnect();
+      clearTimeout(observerTimer);
+      observer?.disconnect();
     };
   }, [visible, syncContent, throttledSyncContent, contentRef]);
 
