@@ -84,7 +84,7 @@ export function Minimap({ visible, contentRef, scrollContainerRef }: MinimapProp
     const observer = new MutationObserver(syncContent);
     observer.observe(content, { childList: true, subtree: true, characterData: true });
     return () => observer.disconnect();
-  }, [visible, syncContent, throttledSyncContent, contentRef]);
+  }, [visible, syncContent, contentRef]);
 
   // Sync viewport on scroll/resize
   useEffect(() => {
