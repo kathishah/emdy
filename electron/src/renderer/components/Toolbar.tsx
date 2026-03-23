@@ -106,6 +106,8 @@ export function Toolbar({
             className="toolbar-btn"
             onClick={onToggleSidebar}
             data-tooltip="Toggle sidebar  ⌘B"
+            aria-label="Toggle sidebar"
+            aria-expanded={sidebarVisible}
           >
             <PanelLeft {...ICON} />
           </button>
@@ -130,20 +132,20 @@ export function Toolbar({
           <>
             {/* Zoom */}
             <div className="toolbar-zoom-group">
-              <button className="toolbar-btn" onClick={onZoomOut} data-tooltip="Zoom out  ⌘−">
+              <button className="toolbar-btn" onClick={onZoomOut} data-tooltip="Zoom out  ⌘−" aria-label="Zoom out">
                 <Minus {...ICON} />
               </button>
-              <button className="toolbar-btn zoom-label" onClick={onZoomReset} data-tooltip="Reset zoom  ⌘0">
+              <button className="toolbar-btn zoom-label" onClick={onZoomReset} data-tooltip="Reset zoom  ⌘0" aria-label={`Zoom reset, currently ${pct}%`}>
                 {pct}%
               </button>
-              <button className="toolbar-btn" onClick={onZoomIn} data-tooltip="Zoom in  ⌘+">
+              <button className="toolbar-btn" onClick={onZoomIn} data-tooltip="Zoom in  ⌘+" aria-label="Zoom in">
                 <Plus {...ICON} />
               </button>
             </div>
 
             {/* Search */}
             {hasSidebar && (
-              <button className="toolbar-btn" onClick={onSearch} data-tooltip="Search  ⌘F">
+              <button className="toolbar-btn" onClick={onSearch} data-tooltip="Search  ⌘F" aria-label="Search files">
                 <Search {...ICON} />
               </button>
             )}
@@ -154,17 +156,21 @@ export function Toolbar({
                 className={`toolbar-btn${fontMenuOpen ? ' active' : ''}`}
                 onClick={() => setFontMenuOpen((v) => !v)}
                 data-tooltip="Font"
+                aria-label="Font"
+                aria-haspopup="true"
+                aria-expanded={fontMenuOpen}
               >
                 <Type {...ICON} />
               </button>
               {fontMenuOpen && (
-                <div className="toolbar-dropdown">
+                <div className="toolbar-dropdown" role="menu">
                   {fonts.map((f) => (
                     <button
                       key={f.value}
                       className={`toolbar-dropdown-item${fontFamily === f.value ? ' active' : ''}`}
                       style={{ fontFamily: f.family }}
                       onClick={() => { onFontChange(f.value); setFontMenuOpen(false); }}
+                      role="menuitem"
                     >
                       {f.label}
                     </button>
@@ -174,18 +180,18 @@ export function Toolbar({
             </div>
 
             {/* Copy */}
-            <button className="toolbar-btn" onClick={onCopyHTML} data-tooltip="Copy formatted">
+            <button className="toolbar-btn" onClick={onCopyHTML} data-tooltip="Copy formatted" aria-label="Copy to clipboard">
               <Copy {...ICON} />
             </button>
 
             {/* Export PDF */}
-            <button className="toolbar-btn" onClick={onExportPDF} data-tooltip="Export PDF  ⌘⇧E">
+            <button className="toolbar-btn" onClick={onExportPDF} data-tooltip="Export PDF  ⌘⇧E" aria-label="Export as PDF">
               <FileDown {...ICON} />
             </button>
 
 
             {/* Settings */}
-            <button className="toolbar-btn" onClick={onOpenSettings} data-tooltip="Settings">
+            <button className="toolbar-btn" onClick={onOpenSettings} data-tooltip="Settings" aria-label="Settings">
               <Settings {...ICON} />
             </button>
 
@@ -194,6 +200,8 @@ export function Toolbar({
               className="toolbar-btn"
               onClick={onToggleMinimap}
               data-tooltip="Toggle minimap  ⌘M"
+              aria-label="Toggle minimap"
+              aria-expanded={minimapVisible}
             >
               <PanelRight {...ICON} />
             </button>
@@ -202,7 +210,7 @@ export function Toolbar({
 
         {/* Search when no content but sidebar open */}
         {!hasContent && hasSidebar && (
-          <button className="toolbar-btn" onClick={onSearch} data-tooltip="Search  ⌘F">
+          <button className="toolbar-btn" onClick={onSearch} data-tooltip="Search  ⌘F" aria-label="Search files">
             <Search {...ICON} />
           </button>
         )}
@@ -215,11 +223,14 @@ export function Toolbar({
                 className={`toolbar-btn${overflowOpen ? ' active' : ''}`}
                 onClick={() => setOverflowOpen((v) => !v)}
                 data-tooltip="More actions"
+                aria-label="More actions"
+                aria-haspopup="true"
+                aria-expanded={overflowOpen}
               >
                 <MoreHorizontal {...ICON} />
               </button>
               {overflowOpen && (
-                <div className="toolbar-dropdown toolbar-overflow-dropdown">
+                <div className="toolbar-dropdown toolbar-overflow-dropdown" role="menu">
                   <div className="toolbar-overflow-group">
                     <span className="toolbar-overflow-label">Font</span>
                     {fonts.map((f) => (
@@ -228,16 +239,17 @@ export function Toolbar({
                         className={`toolbar-dropdown-item${fontFamily === f.value ? ' active' : ''}`}
                         style={{ fontFamily: f.family }}
                         onClick={() => { onFontChange(f.value); setOverflowOpen(false); }}
+                        role="menuitem"
                       >
                         {f.label}
                       </button>
                     ))}
                   </div>
                   <div className="toolbar-overflow-divider" />
-                  <button className="toolbar-dropdown-item" onClick={() => { onExportPDF(); setOverflowOpen(false); }}>
+                  <button className="toolbar-dropdown-item" onClick={() => { onExportPDF(); setOverflowOpen(false); }} role="menuitem">
                     <FileDown size={14} strokeWidth={1.5} /> Export PDF
                   </button>
-                  <button className="toolbar-dropdown-item" onClick={() => { onCopyHTML(); setOverflowOpen(false); }}>
+                  <button className="toolbar-dropdown-item" onClick={() => { onCopyHTML(); setOverflowOpen(false); }} role="menuitem">
                     <Copy size={14} strokeWidth={1.5} /> Copy as formatted text
                   </button>
                 </div>
@@ -250,6 +262,8 @@ export function Toolbar({
               className="toolbar-btn"
               onClick={onToggleMinimap}
               data-tooltip="Toggle minimap  ⌘M"
+              aria-label="Toggle minimap"
+              aria-expanded={minimapVisible}
             >
               <PanelRight {...ICON} />
             </button>
