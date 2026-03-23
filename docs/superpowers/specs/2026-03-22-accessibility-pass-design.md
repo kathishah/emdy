@@ -12,7 +12,9 @@
 
 The app has solid interactive foundations: native `<button>` and `<input>` elements throughout, keyboard shortcuts for core actions (Cmd+O, Cmd+F, Cmd+/-), arrow key navigation in the command palette, Escape to close modals, and semantic `<article>` and `<table>` markup in rendered Markdown.
 
-The gaps are structural: zero `aria-*` attributes anywhere, no ARIA roles, no focus indicators (outline is globally removed), no focus trapping in modals, no screen reader announcements for dynamic content, and no `prefers-reduced-motion` support.
+The gaps are structural: zero `aria-*` attributes anywhere, no ARIA roles, no focus indicators (`outline: none` on the command palette input, no `:focus-visible` styles anywhere), no focus trapping in modals, no screen reader announcements for dynamic content, and no `prefers-reduced-motion` support.
+
+Note: `FindBar.tsx` exists as a component but is not currently rendered in `App.tsx`. Accessibility work on FindBar is included in this spec for when it gets wired up, but it is not blocking for the initial pass.
 
 ---
 
@@ -25,7 +27,7 @@ The foundation for VoiceOver landmark navigation. Without landmarks, the app is 
 **App.tsx:**
 - Sidebar wrapper becomes `<nav aria-label="Files">`
 - Content area becomes `<main>`
-- Status bar becomes `<footer>`
+- Status bar becomes `<footer>` — rendered inside the content column (not at app root), which is valid HTML. VoiceOver will surface it as a `contentinfo` landmark within `<main>`.
 
 **Toolbar.tsx:**
 - Add `role="toolbar"` and `aria-label="Document tools"` to the toolbar container
@@ -77,6 +79,14 @@ Every button with only an icon gets an `aria-label`:
 | SettingsModal | `role="dialog"`, `aria-modal="true"`, `aria-labelledby` → modal title element |
 | FileContextMenu | `role="menu"` on container, `role="menuitem"` on each option |
 
+### Toolbar dropdown menus
+
+Font selector and overflow menu are custom dropdown menus built with divs and buttons:
+
+- Trigger button: `aria-haspopup="true"`, `aria-expanded="true|false"`
+- Dropdown container: `role="menu"`
+- Each option: `role="menuitem"`
+
 ### Command palette results
 
 - Results container: `role="listbox"`
@@ -101,8 +111,8 @@ Every button with only an icon gets an `aria-label`:
 
 ### Settings modal controls
 
-- Color swatch buttons: `aria-label` with theme name (e.g., "Warm theme", "Cool theme")
-- Appearance options: `aria-pressed="true|false"` for the selected option
+- Color swatch buttons: `aria-label` with theme name (e.g., "Warm theme", "Cool theme", "Fresh theme", "Neon theme")
+- Appearance options (Light/Dark/System): wrap in `role="radiogroup"` with `aria-label="Appearance"`, each option gets `role="radio"` with `aria-checked="true|false"`
 
 ---
 
@@ -112,7 +122,7 @@ Makes keyboard navigation visible and logical.
 
 ### Focus indicators
 
-- Remove `* { outline: none }` from `global.css`
+- Remove `outline: none` from `.command-palette-input` in `global.css`
 - Add `:focus-visible` style for all interactive elements: 2px ring using `var(--accent)`, 2px offset
 - `:focus` (without `-visible`) remains suppressed so mouse clicks don't show rings
 - Dark mode: same accent ring with a subtle outer glow for visibility against dark backgrounds
@@ -123,8 +133,9 @@ Default DOM order is preserved (toolbar → sidebar → content → status bar).
 
 **Toolbar roving tabindex:**
 - Tab enters the toolbar and focuses the first (or last-focused) button
-- Arrow keys move between buttons within the toolbar
-- Tab exits the toolbar
+- Arrow keys move between top-level interactive buttons only (skip non-interactive elements like the filename span and dividers)
+- When a dropdown trigger (font selector, overflow) is focused and activated, focus moves into the dropdown menu; Escape returns to the trigger
+- Tab exits the toolbar entirely
 - Avoids forcing users through 10+ buttons to reach content
 
 **Sidebar keyboard navigation:**
@@ -154,7 +165,7 @@ CommandPalette, SettingsModal, and FileContextMenu trap focus while open. Tab/Sh
 
 ### New: `useFocusTrap` hook
 
-Shared hook to avoid duplicating trap logic. Takes a ref to the container element, intercepts Tab key events, and cleans up on unmount.
+Shared hook to avoid duplicating trap logic. Takes a ref to the container element. On mount, captures `document.activeElement` for later restoration. On each Tab/Shift+Tab keydown, queries the container for all focusable elements (`button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])`) filtered to visible elements, and wraps focus at the boundaries. On unmount, restores focus to the previously active element. Re-queries focusable elements on each Tab press to handle dynamically added content (e.g., command palette results).
 
 ### Initial focus on open
 
@@ -167,9 +178,7 @@ Shared hook to avoid duplicating trap logic. Takes a ref to the container elemen
 
 ### Focus restoration on close
 
-All modals restore focus to the element that triggered them. The `useFocusTrap` hook captures `document.activeElement` on mount and restores it on unmount.
-
-Escape key handlers already exist for all modals — focus restoration hooks into the same close path.
+All modals restore focus to the element that triggered them. The `useFocusTrap` hook handles this automatically (captures on mount, restores on unmount). Escape key handlers already exist for all modals — focus restoration happens as part of the unmount cleanup.
 
 ---
 
@@ -179,7 +188,7 @@ Makes dynamic content changes audible to screen readers without stealing focus.
 
 ### New: `useAnnounce` hook
 
-Manages a single visually-hidden live region in the DOM. Provides:
+Implemented as an `AnnounceProvider` component (rendered once at the top of `App.tsx`, creates two visually-hidden `<div>` elements with `aria-live="polite"` and `aria-live="assertive"`) paired with a `useAnnounce` hook that accesses the provider via React context. Provides:
 
 - `announce(message)` — polite announcement (`aria-live="polite"`)
 - `announceAssertive(message)` — interrupting announcement (`aria-live="assertive"`)
@@ -234,7 +243,7 @@ Audit color tokens in `color-themes.ts` against WCAG AA minimums:
 - **Large text (>= 18pt / 14pt bold):** 3:1 ratio
 - **UI components and graphical objects:** 3:1 ratio
 
-Four combinations to check: Warm Light, Warm Dark, Cool Light, Cool Dark.
+Eight combinations to check: Warm, Cool, Fresh, and Neon — each in Light and Dark.
 
 Most likely candidates for issues: `--text-muted`, `--text-secondary`, and `--border-*` colors against their respective backgrounds.
 
@@ -247,7 +256,7 @@ Fix any failures by adjusting token values. Add a comment block in `color-themes
 | Item | Type | Purpose |
 |------|------|---------|
 | `useFocusTrap` | Hook | Focus trapping for modals, captures/restores previous focus |
-| `useAnnounce` | Hook | Visually-hidden live region for screen reader announcements |
+| `AnnounceProvider` + `useAnnounce` | Provider + Hook | Visually-hidden live regions for screen reader announcements |
 | Skip link component | Component | "Skip to content" link, visible on focus |
 | `:focus-visible` styles | CSS | Focus ring for all interactive elements |
 | `prefers-reduced-motion` | CSS | Disables animations/transitions for motion-sensitive users |
@@ -271,7 +280,7 @@ Fix any failures by adjusting token values. Add a comment block in `color-themes
 | `global.css` | 3 (focus-visible), 6 (reduced motion) |
 | `color-themes.ts` | 6 (contrast fixes, verification comment) |
 | New: `hooks/useFocusTrap.ts` | 4 |
-| New: `hooks/useAnnounce.ts` | 5 |
+| New: `hooks/useAnnounce.ts` | 5 (AnnounceProvider + useAnnounce hook) |
 | New: `components/SkipLink.tsx` | 1 |
 
 ## Testing
