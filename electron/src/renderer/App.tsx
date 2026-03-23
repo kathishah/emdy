@@ -8,6 +8,7 @@ import { Minimap } from './components/Minimap';
 import { StatusBar } from './components/StatusBar';
 import { EmptyState } from './components/EmptyState';
 import { WelcomeView } from './components/WelcomeView';
+import { SkipLink } from './components/SkipLink';
 import { ToastNotification, type Toast } from './components/ToastNotification';
 import { FileContextMenu } from './components/FileContextMenu';
 import { useDisplaySettings } from './hooks/useDisplaySettings';
@@ -200,23 +201,35 @@ export function App() {
 
   const renderContent = () => {
     if (fileDeleted) {
-      return <EmptyState type="file-deleted" onAction={handleOpen} actionLabel="Open Another File" />;
+      return (
+        <main id="main-content">
+          <EmptyState type="file-deleted" onAction={handleOpen} actionLabel="Open Another File" />
+        </main>
+      );
     }
     if (fileError) {
-      return <EmptyState type="error" message={fileError} onAction={handleOpen} actionLabel="Open Another File" />;
+      return (
+        <main id="main-content">
+          <EmptyState type="error" message={fileError} onAction={handleOpen} actionLabel="Open Another File" />
+        </main>
+      );
     }
     if (content === null && dirEntries !== null) {
       return (
-        <div className="empty-state">
+        <main id="main-content" className="empty-state">
           <p className="empty-state-message">Select a file to start reading</p>
-        </div>
+        </main>
       );
     }
     if (content === null) {
-      return <WelcomeView onOpen={handleOpen} />;
+      return (
+        <main id="main-content">
+          <WelcomeView onOpen={handleOpen} />
+        </main>
+      );
     }
     return (
-      <div className="content-column">
+      <main id="main-content" className="content-column">
         <div className="content-wrapper">
           <div className={`content-area${minimapVisible ? ' hide-scrollbar' : ''}`} ref={scrollContainerRef}>
             <MarkdownView
@@ -238,12 +251,13 @@ export function App() {
           />
         </div>
         <StatusBar filePath={filePath} rootPath={dirPath} content={content} />
-      </div>
+      </main>
     );
   };
 
   return (
     <div className="app">
+      <SkipLink />
       <div className={`titlebar${isWelcome ? ' titlebar-compact' : ''}`} onDoubleClick={(e) => {
         if ((e.target as HTMLElement).closest('button, .toolbar-btn, .toolbar-dropdown-wrapper, .toolbar-filename, .toolbar-zoom-group')) return;
         window.electronAPI.toggleMaximize();
@@ -287,7 +301,7 @@ export function App() {
       />
       <div className="main-layout">
         {dirEntries && (
-          <div className={`sidebar-container${sidebarVisible ? ' open' : ''}`}>
+          <nav aria-label="Files" className={`sidebar-container${sidebarVisible ? ' open' : ''}`}>
             <DirectoryBrowser
               entries={dirEntries}
               activePath={filePath}
@@ -295,7 +309,7 @@ export function App() {
               onFileSelect={handleFileSelect}
               onFileContextMenu={handleFileContextMenu}
             />
-          </div>
+          </nav>
         )}
         {renderContent()}
       </div>
