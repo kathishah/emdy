@@ -122,6 +122,40 @@ export function Toolbar({
     });
   }, [rovingIndex, getToolbarButtons, fontMenuOpen, overflowOpen, collapsed, hasContent]);
 
+  const handleMenuKeyDown = useCallback((e: React.KeyboardEvent, closeMenu: () => void) => {
+    const menu = e.currentTarget;
+    const items = Array.from(menu.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = (currentIndex + 1) % items.length;
+      items[next]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = (currentIndex - 1 + items.length) % items.length;
+      items[prev]?.focus();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeMenu();
+    }
+  }, []);
+
+  // Auto-focus first menu item when font dropdown opens
+  useEffect(() => {
+    if (fontMenuOpen) {
+      const firstItem = fontMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]');
+      firstItem?.focus();
+    }
+  }, [fontMenuOpen]);
+
+  // Auto-focus first menu item when overflow menu opens
+  useEffect(() => {
+    if (overflowOpen) {
+      const firstItem = overflowRef.current?.querySelector<HTMLElement>('[role="menuitem"]');
+      firstItem?.focus();
+    }
+  }, [overflowOpen]);
+
   const pct = Math.round(zoom * 100);
   const currentFont = fonts.find((f) => f.value === fontFamily) || fonts[0];
 
@@ -193,7 +227,7 @@ export function Toolbar({
                 <Type {...ICON} />
               </button>
               {fontMenuOpen && (
-                <div className="toolbar-dropdown" role="menu">
+                <div className="toolbar-dropdown" role="menu" onKeyDown={(e) => handleMenuKeyDown(e, () => setFontMenuOpen(false))}>
                   {fonts.map((f) => (
                     <button
                       key={f.value}
@@ -262,7 +296,7 @@ export function Toolbar({
                 <MoreHorizontal {...ICON} />
               </button>
               {overflowOpen && (
-                <div className="toolbar-dropdown toolbar-overflow-dropdown" role="menu">
+                <div className="toolbar-dropdown toolbar-overflow-dropdown" role="menu" onKeyDown={(e) => handleMenuKeyDown(e, () => setOverflowOpen(false))}>
                   <div className="toolbar-overflow-group">
                     <span className="toolbar-overflow-label">Font</span>
                     {fonts.map((f) => (
