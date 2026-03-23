@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import type { AppTheme, ColorThemeName } from '../lib/types';
 import { useTransition } from '../hooks/useTransition';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -33,12 +34,21 @@ export function SettingsModal({
   onColorThemeChange,
 }: SettingsModalProps) {
   const { mounted, active } = useTransition(visible);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, visible);
+
+  useEffect(() => {
+    if (visible && modalRef.current) {
+      const firstFocusable = modalRef.current.querySelector<HTMLElement>('button, [href], input');
+      firstFocusable?.focus();
+    }
+  }, [visible]);
 
   if (!mounted) return null;
 
   return (
     <div className={`settings-overlay${active ? ' active' : ''}`} onClick={onClose}>
-      <div className={`settings-modal${active ? ' active' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+      <div ref={modalRef} className={`settings-modal${active ? ' active' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
         <div className="settings-header">
           <span id="settings-modal-title" className="settings-title">Settings</span>
           <button className="settings-close" onClick={onClose} aria-label="Close">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTransition } from '../hooks/useTransition';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface SearchResult {
   filePath: string;
@@ -21,7 +22,9 @@ export function CommandPalette({ visible, onClose, onFileSelect }: CommandPalett
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searching, setSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
   const { mounted, active } = useTransition(visible);
+  useFocusTrap(modalRef, visible);
 
   useEffect(() => {
     if (visible && inputRef.current) {
@@ -133,6 +136,7 @@ export function CommandPalette({ visible, onClose, onFileSelect }: CommandPalett
   return (
     <div className={`command-palette-overlay${active ? ' active' : ''}`} onClick={onClose}>
       <div
+        ref={modalRef}
         className={`command-palette${active ? ' active' : ''}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"

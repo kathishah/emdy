@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Clipboard, FileDown, FolderOpen, ExternalLink } from 'lucide-react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface FileContextMenuProps {
   x: number;
@@ -12,6 +13,12 @@ interface FileContextMenuProps {
 
 export function FileContextMenu({ x, y, filePath, onClose, onCopyHTML, onExportPDF }: FileContextMenuProps) {
   const ref = useRef<HTMLDivElement>(null);
+  useFocusTrap(ref, true);
+
+  useEffect(() => {
+    const firstItem = ref.current?.querySelector<HTMLElement>('button');
+    firstItem?.focus();
+  }, []);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
