@@ -38,10 +38,10 @@ export function SettingsModal({
 
   return (
     <div className={`settings-overlay${active ? ' active' : ''}`} onClick={onClose}>
-      <div className={`settings-modal${active ? ' active' : ''}`} onClick={(e) => e.stopPropagation()}>
+      <div className={`settings-modal${active ? ' active' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
         <div className="settings-header">
-          <span className="settings-title">Settings</span>
-          <button className="settings-close" onClick={onClose}>
+          <span id="settings-modal-title" className="settings-title">Settings</span>
+          <button className="settings-close" onClick={onClose} aria-label="Close">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M2 2l10 10M12 2L2 12" />
             </svg>
@@ -50,12 +50,15 @@ export function SettingsModal({
 
         <div className="settings-section">
           <label className="settings-label">Color Scheme</label>
-          <div className="settings-options">
+          <div className="settings-options" role="radiogroup" aria-label="Color scheme">
             {colorThemes.map((ct) => (
               <button
                 key={ct.value}
                 className={`settings-option${colorTheme === ct.value ? ' active' : ''}`}
                 onClick={() => onColorThemeChange(ct.value)}
+                role="radio"
+                aria-checked={colorTheme === ct.value}
+                aria-label={`${ct.label} theme`}
               >
                 <svg width="14" height="14" viewBox="0 0 16 16">
                   <circle cx="8" cy="8" r="5" fill={ct.swatch} />
@@ -68,12 +71,14 @@ export function SettingsModal({
 
         <div className="settings-section">
           <label className="settings-label">Appearance</label>
-          <div className="settings-options">
+          <div className="settings-options" role="radiogroup" aria-label="Appearance">
             {appearances.map((a) => (
               <button
                 key={a.value}
                 className={`settings-option${theme === a.value ? ' active' : ''}`}
                 onClick={() => onThemeChange(a.value)}
+                role="radio"
+                aria-checked={theme === a.value}
               >
                 {a.label}
               </button>
