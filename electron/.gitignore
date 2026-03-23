@@ -90,3 +90,6 @@ typings/
 
 # Electron-Forge
 out/
+
+# Performance test fixtures (generated .md files only; generator script is tracked)
+test-fixtures/*.md
