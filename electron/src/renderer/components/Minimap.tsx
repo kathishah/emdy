@@ -152,6 +152,7 @@ export function Minimap({ visible, contentRef, scrollContainerRef }: MinimapProp
     <div
       className={`minimap${visible ? ' open' : ''}`}
       aria-hidden="true"
+      tabIndex={-1}
       ref={containerRef}
       onMouseDown={handleMouseDown}
       onWheel={handleWheel}

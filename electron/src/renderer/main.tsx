@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { AnnounceProvider } from './hooks/useAnnounce';
 import { applyTheme } from './lib/theme-provider';
 import './styles/global.css';
 
@@ -10,6 +11,8 @@ applyTheme('warm', 'light');
 const root = createRoot(document.getElementById('root')!);
 root.render(
   <React.StrictMode>
-    <App />
+    <AnnounceProvider>
+      <App />
+    </AnnounceProvider>
   </React.StrictMode>
 );

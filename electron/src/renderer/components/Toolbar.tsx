@@ -117,6 +117,10 @@ export function Toolbar({
 
   useEffect(() => {
     const buttons = getToolbarButtons();
+    if (buttons.length > 0 && rovingIndex >= buttons.length) {
+      setRovingIndex(0);
+      return;
+    }
     buttons.forEach((btn, i) => {
       btn.tabIndex = i === rovingIndex ? 0 : -1;
     });
