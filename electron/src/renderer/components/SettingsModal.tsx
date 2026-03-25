@@ -82,7 +82,7 @@ export function SettingsModal({
 
         <div className="settings-section">
           <label className="settings-label">Appearance</label>
-          <div className="settings-options" role="radiogroup" aria-label="Appearance">
+          <div className="settings-options settings-grid-3" role="radiogroup" aria-label="Appearance">
             {appearances.map((a) => (
               <button
                 key={a.value}
