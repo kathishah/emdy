@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, protocol, net } from 'electron';
+import { app, BrowserWindow, ipcMain, protocol, net, systemPreferences } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -71,6 +71,11 @@ registerSettingsHandlers();
 registerFileWatcher();
 registerExportHandlers();
 
+// System accent color
+ipcMain.handle('system:accent-color', () => {
+  return '#' + systemPreferences.getAccentColor().slice(0, 6);
+});
+
 // Register protocol to serve local files for markdown images
 protocol.registerSchemesAsPrivileged([
   { scheme: 'local-file', privileges: { bypassCSP: true, supportFetchAPI: true, standard: true } },
@@ -83,6 +88,14 @@ app.on('ready', () => {
   });
   createWindow();
   buildMenu(sendMenuEvent);
+
+  // Forward system accent color changes to renderer (macOS)
+  systemPreferences.subscribeNotification('AppleColorPreferencesChangedNotification', () => {
+    const color = '#' + systemPreferences.getAccentColor().slice(0, 6);
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('system:accent-color-changed', color);
+    }
+  });
 });
 
 app.on('window-all-closed', () => {

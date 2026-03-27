@@ -329,6 +329,7 @@ export function App() {
         onClose={() => setSettingsVisible(false)}
         theme={display.theme}
         colorTheme={display.colorTheme}
+        systemAccentColor={display.systemAccentColor}
         onThemeChange={display.setTheme}
         onColorThemeChange={display.setColorTheme}
       />

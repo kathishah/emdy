@@ -36,6 +36,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSettings: () => ipcRenderer.invoke('settings:get'),
   setSetting: (key: string, value: unknown) => ipcRenderer.invoke('settings:set', key, value),
 
+  // System
+  getAccentColor: () => ipcRenderer.invoke('system:accent-color'),
+  onAccentColorChanged: (callback: (color: string) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, color: string) => callback(color);
+    ipcRenderer.on('system:accent-color-changed', handler);
+    return () => ipcRenderer.removeListener('system:accent-color-changed', handler);
+  },
+
   // Window
   toggleMaximize: () => ipcRenderer.invoke('window:toggle-maximize'),
 

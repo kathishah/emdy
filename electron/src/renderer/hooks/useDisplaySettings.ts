@@ -18,8 +18,9 @@ export function useDisplaySettings() {
   const [resolvedColors, setResolvedColors] = useState<ColorScale>(
     getResolvedColors('warm', 'light')
   );
+  const [systemAccentColor, setSystemAccentColor] = useState<string | undefined>();
 
-  // Load saved settings on mount
+  // Load saved settings and system accent color on mount
   useEffect(() => {
     window.electronAPI.getSettings().then((saved) => {
       setSettings({
@@ -29,6 +30,8 @@ export function useDisplaySettings() {
         zoom: saved.zoom || 1.0,
       });
     });
+    window.electronAPI.getAccentColor().then(setSystemAccentColor);
+    return window.electronAPI.onAccentColorChanged(setSystemAccentColor);
   }, []);
 
   // Resolve appearance and apply theme
@@ -42,8 +45,8 @@ export function useDisplaySettings() {
       }
       const appearance = dark ? 'dark' : 'light';
       setResolvedAppearance(appearance);
-      setResolvedColors(getResolvedColors(settings.colorTheme, appearance));
-      applyTheme(settings.colorTheme, appearance);
+      setResolvedColors(getResolvedColors(settings.colorTheme, appearance, systemAccentColor));
+      applyTheme(settings.colorTheme, appearance, systemAccentColor);
     };
 
     resolve();
@@ -51,7 +54,7 @@ export function useDisplaySettings() {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     mq.addEventListener('change', resolve);
     return () => mq.removeEventListener('change', resolve);
-  }, [settings.theme, settings.colorTheme]);
+  }, [settings.theme, settings.colorTheme, systemAccentColor]);
 
   const setFontFamily = useCallback((fontFamily: FontFamily) => {
     setSettings((s) => ({ ...s, fontFamily }));
@@ -95,6 +98,7 @@ export function useDisplaySettings() {
     ...settings,
     resolvedAppearance,
     resolvedColors,
+    systemAccentColor,
     setFontFamily,
     setTheme,
     setColorTheme,

@@ -8,6 +8,7 @@ interface SettingsModalProps {
   onClose: () => void;
   theme: AppTheme;
   colorTheme: ColorThemeName;
+  systemAccentColor?: string;
   onThemeChange: (theme: AppTheme) => void;
   onColorThemeChange: (colorTheme: ColorThemeName) => void;
 }
@@ -31,6 +32,7 @@ export function SettingsModal({
   onClose,
   theme,
   colorTheme,
+  systemAccentColor,
   onThemeChange,
   onColorThemeChange,
 }: SettingsModalProps) {
@@ -72,7 +74,7 @@ export function SettingsModal({
                 aria-label={`${ct.label} theme`}
               >
                 <svg width="14" height="14" viewBox="0 0 16 16">
-                  <circle cx="8" cy="8" r="5" fill={ct.swatch} />
+                  <circle cx="8" cy="8" r="5" fill={ct.value === 'neutral' && systemAccentColor ? systemAccentColor : ct.swatch} />
                 </svg>
                 {ct.label}
               </button>

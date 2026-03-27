@@ -5,8 +5,24 @@ function camelToKebab(str: string): string {
   return str.replace(/([A-Z])/g, '-$1').toLowerCase();
 }
 
-export function applyTheme(colorTheme: ColorThemeName, appearance: 'light' | 'dark'): void {
-  const colors: ColorScale = themes[colorTheme][appearance];
+function adjustBrightness(hex: string, amount: number): string {
+  const r = Math.max(0, Math.min(255, parseInt(hex.slice(1, 3), 16) + amount));
+  const g = Math.max(0, Math.min(255, parseInt(hex.slice(3, 5), 16) + amount));
+  const b = Math.max(0, Math.min(255, parseInt(hex.slice(5, 7), 16) + amount));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+export function applyTheme(colorTheme: ColorThemeName, appearance: 'light' | 'dark', systemAccentColor?: string): void {
+  const colors: ColorScale = { ...themes[colorTheme][appearance] };
+
+  // Neutral theme inherits accent from system settings
+  if (colorTheme === 'neutral' && systemAccentColor) {
+    colors.accent = systemAccentColor;
+    colors.accentHover = appearance === 'light'
+      ? adjustBrightness(systemAccentColor, -30)
+      : adjustBrightness(systemAccentColor, 30);
+  }
+
   const root = document.documentElement;
 
   // Colors
@@ -57,6 +73,13 @@ export function applyTheme(colorTheme: ColorThemeName, appearance: 'light' | 'da
   root.classList.toggle('dark', appearance === 'dark');
 }
 
-export function getResolvedColors(colorTheme: ColorThemeName, appearance: 'light' | 'dark'): ColorScale {
-  return themes[colorTheme][appearance];
+export function getResolvedColors(colorTheme: ColorThemeName, appearance: 'light' | 'dark', systemAccentColor?: string): ColorScale {
+  const colors = { ...themes[colorTheme][appearance] };
+  if (colorTheme === 'neutral' && systemAccentColor) {
+    colors.accent = systemAccentColor;
+    colors.accentHover = appearance === 'light'
+      ? adjustBrightness(systemAccentColor, -30)
+      : adjustBrightness(systemAccentColor, 30);
+  }
+  return colors;
 }
