@@ -1,10 +1,10 @@
-import { app, BrowserWindow, ipcMain, protocol, net, systemPreferences } from 'electron';
+import { app, BrowserWindow, ipcMain, protocol, net, systemPreferences, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import started from 'electron-squirrel-startup';
 import { registerFileHandlers } from './ipc-handlers';
-import { registerSettingsHandlers } from './settings-store';
+import { registerSettingsHandlers, registerNudgeHandlers, nudgeTrackAppLaunch } from './settings-store';
 import { registerFileWatcher } from './file-watcher';
 import { registerExportHandlers } from './pdf-export';
 import { buildMenu } from './menu';
@@ -70,10 +70,19 @@ registerFileHandlers();
 registerSettingsHandlers();
 registerFileWatcher();
 registerExportHandlers();
+registerNudgeHandlers();
 
 // System accent color
 ipcMain.handle('system:accent-color', () => {
   return '#' + systemPreferences.getAccentColor().slice(0, 6);
+});
+
+ipcMain.handle('app:version', () => {
+  return app.getVersion();
+});
+
+ipcMain.handle('app:open-external', (_event, url: string) => {
+  shell.openExternal(url);
 });
 
 // Register protocol to serve local files for markdown images
@@ -87,6 +96,7 @@ app.on('ready', () => {
     return net.fetch(pathToFileURL(filePath).href);
   });
   createWindow();
+  nudgeTrackAppLaunch();
   buildMenu(sendMenuEvent);
 
   // Forward system accent color changes to renderer (macOS)

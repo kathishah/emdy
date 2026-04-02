@@ -2,6 +2,7 @@ import { ipcMain, dialog, BrowserWindow, app, shell } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { FileEntry } from '../renderer/lib/types';
+import { nudgeTrackFileOpen } from './settings-store';
 
 let currentDirPath: string | null = null;
 
@@ -41,6 +42,7 @@ export function registerFileHandlers() {
   });
 
   ipcMain.handle('file:read', async (_event, filePath: string) => {
+    nudgeTrackFileOpen();
     return fs.readFile(filePath, 'utf-8');
   });
 

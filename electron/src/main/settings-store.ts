@@ -43,3 +43,64 @@ export function registerSettingsHandlers() {
     save(current);
   });
 }
+
+// --- Nudge state ---
+
+interface NudgeState {
+  filesOpened: number;
+  appLaunches: number;
+  firstLaunchDate: string | null;
+  dismissedUntil: string | null;
+  dismissCount: number;
+  contributed: boolean;
+}
+
+const nudgeDefaults: NudgeState = {
+  filesOpened: 0,
+  appLaunches: 0,
+  firstLaunchDate: null,
+  dismissedUntil: null,
+  dismissCount: 0,
+  contributed: false,
+};
+
+const nudgePath = path.join(app.getPath('userData'), 'nudge.json');
+
+function loadNudge(): NudgeState {
+  try {
+    const data = fs.readFileSync(nudgePath, 'utf-8');
+    return { ...nudgeDefaults, ...JSON.parse(data) };
+  } catch {
+    return { ...nudgeDefaults };
+  }
+}
+
+function saveNudge(state: NudgeState) {
+  fs.writeFileSync(nudgePath, JSON.stringify(state, null, 2));
+}
+
+let nudge = loadNudge();
+
+export function registerNudgeHandlers() {
+  ipcMain.handle('nudge:get', () => {
+    return { ...nudge };
+  });
+
+  ipcMain.handle('nudge:set', (_event, key: string, value: unknown) => {
+    (nudge as unknown as Record<string, unknown>)[key] = value;
+    saveNudge(nudge);
+  });
+}
+
+export function nudgeTrackAppLaunch() {
+  if (!nudge.firstLaunchDate) {
+    nudge.firstLaunchDate = new Date().toISOString();
+  }
+  nudge.appLaunches++;
+  saveNudge(nudge);
+}
+
+export function nudgeTrackFileOpen() {
+  nudge.filesOpened++;
+  saveNudge(nudge);
+}
