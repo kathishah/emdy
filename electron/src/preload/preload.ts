@@ -60,4 +60,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('file:open', handler);
     return () => ipcRenderer.removeListener('file:open', handler);
   },
+
+  // Nudge
+  getNudgeState: () => ipcRenderer.invoke('nudge:get'),
+  setNudgeSetting: (key: string, value: unknown) => ipcRenderer.invoke('nudge:set', key, value),
+
+  // App info
+  getAppVersion: () => ipcRenderer.invoke('app:version'),
+  openExternal: (url: string) => ipcRenderer.invoke('app:open-external', url),
 });

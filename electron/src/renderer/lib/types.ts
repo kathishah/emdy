@@ -16,6 +16,15 @@ export interface DisplaySettings {
   zoom: number;
 }
 
+export interface NudgeState {
+  filesOpened: number;
+  appLaunches: number;
+  firstLaunchDate: string | null;
+  dismissedUntil: string | null;
+  dismissCount: number;
+  contributed: boolean;
+}
+
 export interface SearchResult {
   filePath: string;
   fileName: string;
@@ -52,6 +61,10 @@ export interface ElectronAPI {
   setSetting: (key: string, value: unknown) => Promise<void>;
   onMenuEvent: (callback: (event: string) => void) => () => void;
   onFileOpen: (callback: (filePath: string, content: string) => void) => () => void;
+  getNudgeState: () => Promise<NudgeState>;
+  setNudgeSetting: (key: string, value: unknown) => Promise<void>;
+  getAppVersion: () => Promise<string>;
+  openExternal: (url: string) => Promise<void>;
 }
 
 declare global {
