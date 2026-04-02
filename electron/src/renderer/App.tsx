@@ -11,11 +11,12 @@ import { WelcomeView } from './components/WelcomeView';
 import { SkipLink } from './components/SkipLink';
 import { ToastNotification, type Toast } from './components/ToastNotification';
 import { FileContextMenu } from './components/FileContextMenu';
+import { SupportBanner } from './components/SupportBanner';
 import { useAnnounce } from './hooks/useAnnounce';
 import { useDisplaySettings } from './hooks/useDisplaySettings';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useFileWatcher } from './hooks/useFileWatcher';
-import type { FileEntry } from './lib/types';
+import type { FileEntry, NudgeState } from './lib/types';
 import { perfMark, perfMeasure } from './lib/perf';
 
 let toastId = 0;
@@ -40,6 +41,7 @@ export function App() {
   const [fileError, setFileError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; filePath: string } | null>(null);
+  const [nudgeState, setNudgeState] = useState<NudgeState | null>(null);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -186,6 +188,10 @@ export function App() {
     onFind: () => setSearchVisible((v) => !v),
   });
 
+  useEffect(() => {
+    window.electronAPI.getNudgeState().then(setNudgeState);
+  }, []);
+
   // Handle menu events from main process
   useEffect(() => {
     const removeMenu = window.electronAPI.onMenuEvent((event) => {
@@ -283,6 +289,7 @@ export function App() {
             scrollContainerRef={scrollContainerRef}
           />
         </div>
+        <SupportBanner nudgeState={nudgeState} />
         <StatusBar filePath={filePath} rootPath={dirPath} content={content} />
       </main>
     );
