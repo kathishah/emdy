@@ -89,7 +89,7 @@ The current feature set was designed from assumptions about what a "Markdown rea
 ### Distribution & Packaging
 - [ ] DMG packaging (unsigned for now — users right-click > Open to bypass Gatekeeper)
 - [x] Interactive version bump script (`npm run bump` in electron/) — bumps package.json, commits, tags, offers to push
-- [ ] GitHub Actions release workflow — triggers on `v*` tags, builds macOS .zip via Forge, creates GitHub Release with artifact
+- [x] GitHub Actions release workflow — triggers on `v*` tags, builds macOS .zip via Forge, creates GitHub Release with artifact
 - [ ] Version check on launch — poll `version.json` on emdyapp.com, show "update available" banner linking to Gumroad
 - [ ] Host `version.json` on emdyapp.com (contains latest version number and download URL, points to GitHub Release)
 - [ ] Apple Developer Program signup + code signing + notarization (deferred — revisit if app gains traction)
