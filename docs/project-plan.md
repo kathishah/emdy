@@ -78,8 +78,8 @@ The current feature set was designed from assumptions about what a "Markdown rea
 - [x] **Payment platform analysis** — Gumroad selected. See `docs/payment-platform-analysis.md`
 - [ ] Gumroad product setup — PWYW product with $0+ minimum, app binary to be uploaded when ready
 - [ ] Payment page — embed Gumroad widget on marketing site
-- [ ] In-app support prompt — usage-based nudge (e.g., after N files opened), gentle and non-blocking
-- [ ] Link from app to payment page (support button in settings or about screen)
+- [x] In-app support prompt — usage-based nudge (10 files, 3 launches, 5 days), tinted banner with Contribute/Later/X
+- [x] Link from app to payment page (support button in Settings, About dialog with version + support link)
 - [ ] Thank-you flow — confirmation after payment, optional in-app acknowledgment
 
 ### Legal
@@ -87,10 +87,13 @@ The current feature set was designed from assumptions about what a "Markdown rea
 - [ ] Draft Privacy Policy
 
 ### Distribution & Packaging
-- [ ] Sparkle auto-update integration
-- [ ] Appcast XML hosting setup
-- [ ] DMG packaging and code signing
-- [ ] Direct download website
+- [ ] DMG packaging (unsigned for now — users right-click > Open to bypass Gatekeeper)
+- [x] Interactive version bump script (`npm run bump` in electron/) — bumps package.json, commits, tags, offers to push
+- [ ] GitHub Actions release workflow — triggers on `v*` tags, builds macOS .zip via Forge, creates GitHub Release with artifact
+- [ ] Version check on launch — poll `version.json` on emdyapp.com, show "update available" banner linking to Gumroad
+- [ ] Host `version.json` on emdyapp.com (contains latest version number and download URL, points to GitHub Release)
+- [ ] Apple Developer Program signup + code signing + notarization (deferred — revisit if app gains traction)
+- [ ] Auto-update via `update-electron-app` + GitHub Releases (requires code signing, deferred)
 
 ### Polish & QA
 - [x] Test on macOS light and dark mode across all views (sidebar/titlebar lag fixed — see Completed; dark mode borders and text colors fixed)
