@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Heart, X } from 'lucide-react';
 import type { NudgeState } from '../lib/types';
 
-const GUMROAD_URL = 'https://gumroad.com/l/emdy';
+const SPONSOR_URL = 'https://github.com/sponsors/ghaida';
 
 interface SupportBannerProps {
   nudgeState: NudgeState | null;
@@ -35,7 +35,7 @@ export function SupportBanner({ nudgeState }: SupportBannerProps) {
   }, [nudgeState, dismissed]);
 
   const handleContribute = useCallback(async () => {
-    await window.electronAPI.openExternal(GUMROAD_URL);
+    await window.electronAPI.openExternal(SPONSOR_URL);
     await window.electronAPI.setNudgeSetting('contributed', true);
     setVisible(false);
   }, []);

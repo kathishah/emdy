@@ -266,6 +266,12 @@ a.download-button:hover {
   color: var(--ink);
   text-decoration: none;
   border-bottom: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.logo-icon {
+  border-radius: var(--radius-xs);
 }
 .tagline {
   font-family: var(--font-mono);

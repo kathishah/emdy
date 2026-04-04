@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useTransition } from '../hooks/useTransition';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
-const GUMROAD_URL = 'https://gumroad.com/l/emdy';
+const SPONSOR_URL = 'https://github.com/sponsors/ghaida';
 const WEBSITE_URL = 'https://emdyapp.com';
 
 interface AboutDialogProps {
@@ -45,7 +45,7 @@ export function AboutDialog({ visible, onClose }: AboutDialogProps) {
         <div className="about-divider" />
         <button
           className="settings-support-btn"
-          onClick={() => window.electronAPI.openExternal(GUMROAD_URL)}
+          onClick={() => window.electronAPI.openExternal(SPONSOR_URL)}
         >
           Support Emdy
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
