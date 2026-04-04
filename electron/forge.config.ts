@@ -1,3 +1,4 @@
+import path from 'path';
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerDMG } from '@electron-forge/maker-dmg';
@@ -11,6 +12,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     name: 'Emdy',
+    icon: path.resolve(__dirname, 'src/main/emdy'),
     extendInfo: {
       CFBundleDocumentTypes: [
         {
