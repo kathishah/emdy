@@ -28,12 +28,20 @@
     });
   }
 
-  // Version badge
+  // Version badge + download links
   fetch('version.json')
     .then(r => r.json())
     .then(data => {
       const badge = document.getElementById('version-badge');
       if (badge && data.version) badge.textContent = 'v' + data.version + ' · ';
+
+      const dmgUrl = 'https://github.com/ghaida/emdy/releases/download/v' + data.version + '/Emdy-' + data.version + '-arm64.dmg';
+      document.querySelectorAll('.download-button').forEach(btn => {
+        btn.href = dmgUrl;
+      });
+      document.querySelectorAll('.hero-cta').forEach(btn => {
+        btn.href = dmgUrl;
+      });
     })
     .catch(() => {});
 

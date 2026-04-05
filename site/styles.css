@@ -616,6 +616,9 @@ a.download-button:hover {
    Showcase — screenshot carousel
    ═══════════════════════════════════════════ */
 
+.showcase {
+  margin-bottom: var(--sp-2);
+}
 .showcase .col {
   padding-top: var(--sp-6);
 }
