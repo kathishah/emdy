@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useTransition } from '../hooks/useTransition';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
-const SPONSOR_URL = 'https://github.com/sponsors/ghaida';
+const SUPPORT_URL = 'https://buy.stripe.com/test_4gM6oIflwdfn4pvdES4F200';
 const WEBSITE_URL = 'https://emdyapp.com';
 
 interface AboutDialogProps {
@@ -45,7 +45,7 @@ export function AboutDialog({ visible, onClose }: AboutDialogProps) {
         <div className="about-divider" />
         <button
           className="settings-support-btn"
-          onClick={() => window.electronAPI.openExternal(SPONSOR_URL)}
+          onClick={() => window.electronAPI.openExternal(SUPPORT_URL)}
         >
           Support Emdy
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
