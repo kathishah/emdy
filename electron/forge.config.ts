@@ -30,7 +30,7 @@ const config: ForgeConfig = {
     new MakerSquirrel({}),
     new MakerDMG({
       format: 'ULFO',
-      background: path.resolve(__dirname, '../design-docs/_design/dmg-bg.png'),
+      background: path.resolve(__dirname, 'src/main/dmg-bg.png'),
       icon: path.resolve(__dirname, 'src/main/emdy.icns'),
       iconSize: 80,
       contents: (opts) => [
