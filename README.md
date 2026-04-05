@@ -1,6 +1,10 @@
-# Emdy
+<p align="center">
+  <img src="site/img/app-icon.png" alt="Emdy" width="128" height="128">
+</p>
 
-A minimal, open source Markdown reader for macOS.
+<h1 align="center">Emdy</h1>
+
+<p align="center">A minimal, open source Markdown reader for macOS.</p>
 
 <!-- TODO: Add screenshot -->
 
