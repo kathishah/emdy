@@ -1,62 +1,48 @@
 # Emdy
 
-A lightweight Markdown reader for macOS.
+A minimal, open source Markdown reader for macOS.
 
-## Why
+<!-- TODO: Add screenshot -->
 
-AI tools generate a lot of Markdown — project outlines, meeting notes, documentation. When someone outside engineering receives a `.md` file, they're stuck: Quick Look shows raw syntax, and every Markdown app on the market is an editor packed with features they'll never use.
-
-Emdy renders Markdown files as clean, formatted documents. Double-click and read.
+Emdy renders Markdown files as clean, formatted documents. No editing, no plugins, no clutter. Open a file or folder and read.
 
 ## Features
 
-- **GitHub Flavored Markdown** — headings, lists, tables, code blocks, task lists, images, and more
-- **File and folder support** — open a single file, or a directory to browse its Markdown files in a sidebar with expandable folders
-- **Find in page** — `Cmd F` for incremental search within a document
-- **Minimap** — a scaled overview of the document for quick navigation, togglable from the toolbar
-- **Syntax highlighting** — language-aware coloring for fenced code blocks
-- **Light, Dark, and System themes** — dark mode uses a warm, Braun-inspired palette
-- **Optimal reading width** — text stays within a comfortable column, centered in the window
-- **Font switcher** — serif (IBM Plex Serif), sans-serif (IBM Plex Sans), or monospace (IBM Plex Mono)
-- **Zoom** — enlarge or reduce the document display, with a live percentage readout
-- **RTF copy** — copied text pastes formatted into Mail, Google Docs, Slack, etc.
-- **Export as PDF** — save directly via a dedicated dialog
-- **Print** — via the standard macOS print dialog
-- **Native macOS app** — built with Swift and SwiftUI
+- **GitHub Flavored Markdown** with syntax-highlighted code blocks
+- **Directory browser** sidebar for navigating .md files in a folder
+- **Command palette** (Cmd+F) to search across file names and content
+- **Canvas minimap** for quick document navigation
+- **Zoom** (Cmd+/Cmd-) with live percentage readout
+- **Font switcher** between Sans, Serif, and Mono (IBM Plex family)
+- **Five color themes** (Warm, Cool, Neutral, Fresh, Neon), each with Light, Dark, and System appearance
+- **Copy as formatted HTML**, export as PDF, print
+- **Live reload** when files change on disk
+- **Responsive toolbar** that collapses into an overflow menu on narrow windows
+- **Native macOS menus** with full keyboard shortcut support
 
-## Status
+## Non-goals
 
-The core app is functional. We're currently running user research to validate whether this is the right problem, the right audience, and the right form factor before continuing feature work. See `docs/project-plan.md` for the research plan and `docs/design-brief.md` for existing findings.
+Emdy is a reader, not an editor. There is no Markdown editing, no export to HTML/DOCX, and no plugin system.
 
-## Install
-
-Download the latest release from the [Releases](https://github.com/ghaida/emdy/releases) page.
-
-Requires macOS 14 (Sonoma) or later.
-
-## Usage
-
-- **Open a file:** Double-click any `.md` file, or use File > Open
-- **Open a folder:** Drag a directory into Emdy to browse its Markdown files
-- **Zoom:** `Cmd +` / `Cmd -` (click the percentage in the toolbar to reset)
-- **Change font:** View menu or the Font dropdown in the toolbar
-- **Switch theme:** View menu or the Theme button in the toolbar
-- **Find:** `Cmd F` to search within the current document
-- **Copy as RTF:** Select text and `Cmd C`
-- **Export PDF:** Click the PDF button in the toolbar
-- **Print:** `Cmd P`
-
-## Building from source
+## Build from source
 
 ```bash
 git clone https://github.com/ghaida/emdy.git
-cd emdy
-xcodegen generate
-xcodebuild -scheme Emdy -configuration Debug build
+cd emdy/electron
+npm install
+npm start          # dev with HMR
+npm run make       # build DMG
+npm run bump       # interactive version bump
 ```
 
-The project uses [xcodegen](https://github.com/yonaskolb/XcodeGen) — `project.yml` is the source of truth. Run `xcodegen generate` after cloning or adding/removing files.
+### Tech stack
+
+Electron Forge + Vite, React 18, TypeScript, Tailwind CSS v3, react-markdown + remark-gfm, react-syntax-highlighter (Prism), Lucide React icons, IBM Plex fonts.
+
+## Support
+
+If you find Emdy useful, consider [sponsoring on GitHub](https://github.com/sponsors/ghaida).
 
 ## License
 
-All rights reserved.
+[GPLv3](LICENSE)
