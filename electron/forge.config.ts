@@ -30,6 +30,18 @@ const config: ForgeConfig = {
     new MakerSquirrel({}),
     new MakerDMG({
       format: 'ULFO',
+      background: path.resolve(__dirname, '../design-docs/_design/dmg-bg.png'),
+      icon: path.resolve(__dirname, 'src/main/emdy.icns'),
+      iconSize: 80,
+      contents: (opts) => [
+        { x: 190, y: 292, type: 'file', path: opts.appPath },
+        { x: 468, y: 292, type: 'link', path: '/Applications' },
+      ],
+      additionalDMGOptions: {
+        window: {
+          size: { width: 658, height: 498 },
+        },
+      },
     }),
     new MakerRpm({}),
     new MakerDeb({}),

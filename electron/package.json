@@ -1,8 +1,8 @@
 {
   "name": "emdy-electron",
   "productName": "Emdy",
-  "version": "0.1.1",
-  "description": "Emdy — a minimal Markdown reader (Electron prototype)",
+  "version": "1.0.0",
+  "description": "Open source markdown reader for macOS",
   "main": ".vite/build/index.js",
   "private": true,
   "scripts": {
