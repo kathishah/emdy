@@ -47,6 +47,13 @@
       document.querySelectorAll('.hero-cta').forEach(btn => {
         btn.href = dmgUrl;
       });
+      document.querySelectorAll('.download-button, .hero-cta').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (window.goatcounter) {
+            window.goatcounter.count({ path: 'download', title: 'Download DMG', event: true });
+          }
+        });
+      });
     })
     .catch(() => {});
 
