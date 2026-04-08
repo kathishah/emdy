@@ -13,7 +13,14 @@ const config: ForgeConfig = {
     asar: true,
     name: 'Emdy',
     icon: path.resolve(__dirname, 'src/main/emdy'),
-    osxSign: {},
+    osxSign: {
+      identity: 'Developer ID Application',
+    },
+    osxNotarize: {
+      appleId: process.env.APPLE_ID!,
+      appleIdPassword: process.env.APPLE_ID_PASSWORD!,
+      teamId: '6RS25SR36X',
+    },
     extendInfo: {
       CFBundleDocumentTypes: [
         {
