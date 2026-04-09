@@ -14,17 +14,15 @@ Emdy renders Markdown files as clean, formatted documents. No editing, no plugin
 - **Directory browser** sidebar for navigating .md files in a folder
 - **Command palette** (Cmd+F) to search across file names and content
 - **Canvas minimap** for quick document navigation
-- **Zoom** (Cmd+/Cmd-) with live percentage readout
+- **Zoom** (Cmd+/Cmd-) maintains optimal line length for readability
 - **Font switcher** between Sans, Serif, and Mono (IBM Plex family)
 - **Five color themes** (Warm, Cool, Neutral, Fresh, Neon), each with Light, Dark, and System appearance
-- **Copy as formatted HTML**, export as PDF, print
+- **Copy RTF**, export as PDF, print
 - **Live reload** when files change on disk
-- **Responsive toolbar** that collapses into an overflow menu on narrow windows
-- **Native macOS menus** with full keyboard shortcut support
 
-## Non-goals
+## Read-only
 
-Emdy is a reader, not an editor. There is no Markdown editing, no export to HTML/DOCX, and no plugin system.
+Emdy is a reader, not an editor. There is no Markdown editing on purpose.
 
 ## Build from source
 
