@@ -60,6 +60,22 @@ export const MarkdownView = React.memo(function MarkdownView({ content, colors, 
                 </code>
               );
             },
+            a({ href, children, ...props }) {
+              return (
+                <a
+                  href={href}
+                  {...props}
+                  onClick={(e) => {
+                    if (href) {
+                      e.preventDefault();
+                      window.electronAPI.openExternal(href);
+                    }
+                  }}
+                >
+                  {children}
+                </a>
+              );
+            },
             img({ src, alt, ...props }) {
               let resolvedSrc = src || '';
               // Resolve relative paths to file:// URLs
