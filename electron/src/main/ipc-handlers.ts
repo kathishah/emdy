@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { FileEntry } from '../renderer/lib/types';
 import { nudgeTrackFileOpen } from './settings-store';
+import { addAllowedRoot, isPathAllowed, hardenWindow } from './allowed-paths';
 
 let currentDirPath: string | null = null;
 let currentFilePath: string | null = null;
@@ -21,10 +22,12 @@ export function registerFileHandlers() {
     const stat = await fs.stat(selected);
     if (stat.isDirectory()) {
       currentDirPath = selected;
+      addAllowedRoot(selected);
       return { type: 'directory' as const, dirPath: selected, entries: await scanDirectory(selected) };
     }
     const content = await fs.readFile(selected, 'utf-8');
     currentFilePath = selected;
+    addAllowedRoot(path.dirname(selected));
     app.addRecentDocument(selected);
     return { type: 'file' as const, filePath: selected, content };
   });
@@ -40,11 +43,13 @@ export function registerFileHandlers() {
     const filePath = result.filePaths[0];
     const content = await fs.readFile(filePath, 'utf-8');
     currentFilePath = filePath;
+    addAllowedRoot(path.dirname(filePath));
     app.addRecentDocument(filePath);
     return { filePath, content };
   });
 
   ipcMain.handle('file:read', async (_event, filePath: string) => {
+    if (!isPathAllowed(filePath)) throw new Error('Access denied');
     nudgeTrackFileOpen();
     return fs.readFile(filePath, 'utf-8');
   });
@@ -58,37 +63,39 @@ export function registerFileHandlers() {
     if (result.canceled || result.filePaths.length === 0) return null;
     const dirPath = result.filePaths[0];
     currentDirPath = dirPath;
+    addAllowedRoot(dirPath);
     return { dirPath, entries: await scanDirectory(dirPath) };
   });
 
   ipcMain.handle('dir:scan', async (_event, dirPath: string) => {
+    if (!isPathAllowed(dirPath)) throw new Error('Access denied');
     return scanDirectory(dirPath);
   });
 
   ipcMain.handle('file:show-in-folder', (_event, filePath: string) => {
+    if (!isPathAllowed(filePath)) return;
     shell.showItemInFolder(filePath);
   });
 
   ipcMain.handle('file:open-new-window', async (_event, filePath: string) => {
-    const { BrowserWindow } = await import('electron');
-    const pathMod = await import('node:path');
-    const fsMod = await import('node:fs/promises');
-    const content = await fsMod.readFile(filePath, 'utf-8');
+    if (!isPathAllowed(filePath)) throw new Error('Access denied');
+    const content = await fs.readFile(filePath, 'utf-8');
     const win = new BrowserWindow({
       width: 900,
       height: 650,
       titleBarStyle: 'hiddenInset',
       trafficLightPosition: { x: 16, y: 16 },
       webPreferences: {
-        preload: pathMod.join(__dirname, 'preload.js'),
+        preload: path.join(__dirname, 'preload.js'),
         contextIsolation: true,
         nodeIntegration: false,
       },
     });
+    hardenWindow(win);
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
       win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     } else {
-      win.loadFile(pathMod.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+      win.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
     }
     win.webContents.once('did-finish-load', () => {
       win.webContents.send('file:open', filePath, content);

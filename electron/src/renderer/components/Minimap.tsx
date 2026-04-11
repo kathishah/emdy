@@ -13,6 +13,7 @@ export function Minimap({ visible, contentRef, scrollContainerRef }: MinimapProp
   const cloneRef = useRef<HTMLDivElement>(null);
   const [viewportTop, setViewportTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
+  const [viewportReady, setViewportReady] = useState(false);
   const isDragging = useRef(false);
   // Dynamic scale: derived from minimap width / original content width
   const scaleRef = useRef(0.12);
@@ -93,6 +94,11 @@ export function Minimap({ visible, contentRef, scrollContainerRef }: MinimapProp
     }
   }, [scrollContainerRef, contentRef]);
 
+  // Reset viewport readiness when minimap is hidden
+  useEffect(() => {
+    if (!visible) setViewportReady(false);
+  }, [visible]);
+
   // Sync content on mount and when DOM changes
   useEffect(() => {
     if (!visible) return;
@@ -106,13 +112,38 @@ export function Minimap({ visible, contentRef, scrollContainerRef }: MinimapProp
     return () => observer.disconnect();
   }, [visible, syncContent, contentRef]);
 
-  // Sync viewport on scroll/resize
+  // Sync viewport on scroll/resize — wait for slide-in transition before first sync
   useEffect(() => {
     if (!visible) return;
 
-    const timer = setTimeout(syncViewport, 50);
+    const minimap = containerRef.current;
     const container = scrollContainerRef.current;
-    if (!container) return () => clearTimeout(timer);
+    if (!container) return;
+
+    let synced = false;
+    const initialSync = () => {
+      if (synced) return;
+      synced = true;
+      syncContent();
+      syncViewport();
+      setViewportReady(true);
+    };
+
+    // Wait for the minimap width transition to finish before first sync,
+    // so viewport coordinates are calculated at final dimensions.
+    // Fallback timeout covers the case where the minimap was already open at mount
+    // (no transition fires).
+    let fallback: ReturnType<typeof setTimeout> | undefined;
+    const onTransitionEnd = (e: TransitionEvent) => {
+      if (e.propertyName === 'width') {
+        clearTimeout(fallback);
+        initialSync();
+      }
+    };
+    if (minimap) {
+      minimap.addEventListener('transitionend', onTransitionEnd);
+      fallback = setTimeout(initialSync, 200);
+    }
 
     const onScroll = () => requestAnimationFrame(syncViewport);
     container.addEventListener('scroll', onScroll, { passive: true });
@@ -125,7 +156,8 @@ export function Minimap({ visible, contentRef, scrollContainerRef }: MinimapProp
     if (contentRef.current) resizeObserver.observe(contentRef.current);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(fallback);
+      minimap?.removeEventListener('transitionend', onTransitionEnd);
       container.removeEventListener('scroll', onScroll);
       resizeObserver.disconnect();
     };
@@ -193,13 +225,15 @@ export function Minimap({ visible, contentRef, scrollContainerRef }: MinimapProp
           ref={cloneRef}
         />
       </div>
-      <div
-        className="minimap-viewport"
-        style={{
-          top: `${viewportTop}px`,
-          height: `${Math.max(viewportHeight, 8)}px`,
-        }}
-      />
+      {viewportReady && (
+        <div
+          className="minimap-viewport"
+          style={{
+            top: `${viewportTop}px`,
+            height: `${Math.max(viewportHeight, 8)}px`,
+          }}
+        />
+      )}
     </div>
   );
 }

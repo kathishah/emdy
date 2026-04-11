@@ -2,6 +2,7 @@ import { ipcMain, BrowserWindow, dialog } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import os from 'node:os';
+import { hardenWindow, escapeHtml } from './allowed-paths';
 
 const PRINT_CSS = `
 @page { margin: 20mm; }
@@ -104,19 +105,23 @@ export function registerExportHandlers() {
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
+        javascript: false,
       },
     });
+    hardenWindow(printWin);
 
     // Write CSS and HTML as separate files to avoid escaping issues
     const tmpDir = path.join(os.tmpdir(), `emdy-print-${Date.now()}`);
     await fs.mkdir(tmpDir, { recursive: true });
 
+    const safeTitle = escapeHtml(title);
     await fs.writeFile(path.join(tmpDir, 'print.css'), PRINT_CSS, 'utf-8');
     await fs.writeFile(path.join(tmpDir, 'index.html'), `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>${title.replace(/</g, '&lt;')}</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; img-src * data:; font-src 'self'">
+<title>${safeTitle}</title>
 <link rel="stylesheet" href="print.css">
 </head>
 <body>

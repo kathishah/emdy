@@ -8,6 +8,9 @@ import './styles/global.css';
 // Apply default theme before first render so CSS variables exist
 applyTheme('warm', 'light');
 
+// Remove the static loading indicator from index.html
+document.getElementById('loading')?.remove();
+
 const root = createRoot(document.getElementById('root')!);
 root.render(
   <React.StrictMode>

@@ -38,7 +38,7 @@ export function App() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [searchVisible, setSearchVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [minimapVisible, setMinimapVisible] = useState(false);
+  const [minimapVisible, setMinimapVisible] = useState(true);
   const [fileDeleted, setFileDeleted] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);

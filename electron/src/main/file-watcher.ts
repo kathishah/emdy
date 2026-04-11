@@ -1,10 +1,12 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import chokidar, { type FSWatcher } from 'chokidar';
+import { isPathAllowed } from './allowed-paths';
 
 let watcher: FSWatcher | null = null;
 
 export function registerFileWatcher() {
   ipcMain.handle('file:watch', (_event, filePath: string) => {
+    if (!isPathAllowed(filePath)) return;
     stopWatcher();
 
     watcher = chokidar.watch(filePath, {

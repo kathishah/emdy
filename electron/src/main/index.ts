@@ -1,14 +1,15 @@
-import { app, BrowserWindow, ipcMain, protocol, net, systemPreferences, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeTheme, protocol, net, session, systemPreferences, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import started from 'electron-squirrel-startup';
 import { registerFileHandlers, scanDirectory } from './ipc-handlers';
-import { registerSettingsHandlers, registerNudgeHandlers, nudgeTrackAppLaunch } from './settings-store';
+import { registerSettingsHandlers, registerNudgeHandlers, nudgeTrackAppLaunch, getSettings } from './settings-store';
 import { registerFileWatcher } from './file-watcher';
 import { registerExportHandlers } from './pdf-export';
 import { buildMenu } from './menu';
+import { addAllowedRoot, isPathAllowed, hardenWindow } from './allowed-paths';
 
 if (started) {
   app.quit();
@@ -17,12 +18,27 @@ if (started) {
 let mainWindow: BrowserWindow | null = null;
 let pendingFilePath: string | null = null;
 
+// Background colors per theme to avoid white flash on launch
+const BG_COLORS: Record<string, { light: string; dark: string }> = {
+  warm:    { light: '#F5F3EF', dark: '#1C1A16' },
+  cool:    { light: '#F5F5F4', dark: '#1A1A19' },
+  neutral: { light: '#F0F0F0', dark: '#1C1C1E' },
+  fresh:   { light: '#FFFBF0', dark: '#0A1628' },
+  neon:    { light: '#F4F2F8', dark: '#050510' },
+};
+
 const createWindow = () => {
+  const settings = getSettings();
+  const isDark = settings.theme === 'dark' || (settings.theme === 'system' && nativeTheme.shouldUseDarkColors);
+  const palette = BG_COLORS[settings.colorTheme] || BG_COLORS.warm;
+
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
     minWidth: 600,
     minHeight: 400,
+    show: false,
+    backgroundColor: isDark ? palette.dark : palette.light,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 16, y: 16 },
     webPreferences: {
@@ -30,6 +46,10 @@ const createWindow = () => {
       contextIsolation: true,
       nodeIntegration: false,
     },
+  });
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow?.show();
   });
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
@@ -40,10 +60,7 @@ const createWindow = () => {
     );
   }
 
-  // Handle drag-and-drop
-  mainWindow.webContents.on('will-navigate', (event) => {
-    event.preventDefault();
-  });
+  hardenWindow(mainWindow);
 
   // Send pending file/directory from dock drop / double-click during launch
   mainWindow.webContents.once('did-finish-load', async () => {
@@ -51,9 +68,11 @@ const createWindow = () => {
       try {
         const stat = await fs.stat(pendingFilePath);
         if (stat.isDirectory()) {
+          addAllowedRoot(pendingFilePath);
           const entries = await scanDirectory(pendingFilePath);
           mainWindow?.webContents.send('dir:open', pendingFilePath, entries);
         } else {
+          addAllowedRoot(path.dirname(pendingFilePath));
           const content = await fs.readFile(pendingFilePath, 'utf-8');
           mainWindow?.webContents.send('file:open', pendingFilePath, content);
           app.addRecentDocument(pendingFilePath);
@@ -89,7 +108,14 @@ ipcMain.handle('app:version', () => {
 });
 
 ipcMain.handle('app:open-external', (_event, url: string) => {
-  shell.openExternal(url);
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+      shell.openExternal(url);
+    }
+  } catch {
+    // Invalid URL — ignore
+  }
 });
 
 // Update check state
@@ -118,6 +144,7 @@ async function fetchLatestVersion(): Promise<{ version: string; url: string; not
   const res = await net.fetch('https://emdyapp.com/version.json');
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json() as { version: string; notes?: string[] };
+  if (!/^\d+\.\d+\.\d+$/.test(data.version)) throw new Error('Invalid version format');
   const current = app.getVersion();
   const isNewer = data.version.localeCompare(current, undefined, { numeric: true }) > 0;
   if (!isNewer) return null;
@@ -157,6 +184,7 @@ ipcMain.handle('app:check-update-proactive', async () => {
 });
 
 ipcMain.handle('app:skip-update', (_event, version: string) => {
+  if (!/^\d+\.\d+\.\d+$/.test(version)) return;
   const state = loadUpdateState();
   state.skippedVersion = version;
   saveUpdateState(state);
@@ -164,14 +192,32 @@ ipcMain.handle('app:skip-update', (_event, version: string) => {
 
 // Register protocol to serve local files for markdown images
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'local-file', privileges: { bypassCSP: true, supportFetchAPI: true, standard: true } },
+  { scheme: 'local-file', privileges: { supportFetchAPI: true, standard: true } },
 ]);
 
 app.on('ready', () => {
   protocol.handle('local-file', (request) => {
-    const filePath = decodeURIComponent(request.url.replace('local-file://', ''));
-    return net.fetch(pathToFileURL(filePath).href);
+    const resolved = path.resolve(decodeURIComponent(request.url.replace('local-file://', '')));
+    if (!isPathAllowed(resolved)) {
+      return new Response('Forbidden', { status: 403 });
+    }
+    return net.fetch(pathToFileURL(resolved).href);
   });
+
+  // Content Security Policy — only applied in production (Vite HMR needs looser policy)
+  if (!MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Content-Security-Policy': [
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' local-file: data:; font-src 'self'; connect-src 'self' https://emdyapp.com",
+          ],
+        },
+      });
+    });
+  }
+
   createWindow();
   nudgeTrackAppLaunch();
   buildMenu(sendMenuEvent);
@@ -205,9 +251,11 @@ app.on('open-file', async (event, filePath) => {
     try {
       const stat = await fs.stat(filePath);
       if (stat.isDirectory()) {
+        addAllowedRoot(filePath);
         const entries = await scanDirectory(filePath);
         win.webContents.send('dir:open', filePath, entries);
       } else {
+        addAllowedRoot(path.dirname(filePath));
         const content = await fs.readFile(filePath, 'utf-8');
         win.webContents.send('file:open', filePath, content);
         app.addRecentDocument(filePath);

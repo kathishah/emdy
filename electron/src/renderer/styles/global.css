@@ -122,7 +122,8 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
-.toolbar-btn:hover {
+.toolbar-btn:hover,
+.toolbar-btn.on {
   background: var(--bg-secondary);
   color: var(--text-primary);
 }

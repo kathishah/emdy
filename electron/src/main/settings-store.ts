@@ -31,7 +31,13 @@ function save(settings: Settings) {
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
 }
 
-let current = load();
+const current = load();
+
+export function getSettings(): Settings {
+  return { ...current };
+}
+
+const SETTINGS_KEYS = new Set<string>(['fontFamily', 'theme', 'colorTheme', 'zoom']);
 
 export function registerSettingsHandlers() {
   ipcMain.handle('settings:get', () => {
@@ -39,6 +45,7 @@ export function registerSettingsHandlers() {
   });
 
   ipcMain.handle('settings:set', (_event, key: string, value: unknown) => {
+    if (!SETTINGS_KEYS.has(key)) return;
     (current as unknown as Record<string, unknown>)[key] = value;
     save(current);
   });
@@ -79,7 +86,9 @@ function saveNudge(state: NudgeState) {
   fs.writeFileSync(nudgePath, JSON.stringify(state, null, 2));
 }
 
-let nudge = loadNudge();
+const nudge = loadNudge();
+
+const NUDGE_KEYS = new Set<string>(['dismissedUntil', 'dismissCount', 'contributed']);
 
 export function registerNudgeHandlers() {
   ipcMain.handle('nudge:get', () => {
@@ -87,6 +96,7 @@ export function registerNudgeHandlers() {
   });
 
   ipcMain.handle('nudge:set', (_event, key: string, value: unknown) => {
+    if (!NUDGE_KEYS.has(key)) return;
     (nudge as unknown as Record<string, unknown>)[key] = value;
     saveNudge(nudge);
   });

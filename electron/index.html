@@ -3,8 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <title>Emdy</title>
+    <style>
+      /* Loading state — visible until React mounts and replaces #root contents */
+      body { margin: 0; }
+      #loading {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-app-region: drag;
+      }
+      #loading-spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        opacity: 0.4;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* Match Electron's backgroundColor per theme */
+      @media (prefers-color-scheme: light) {
+        body { background: #F5F3EF; color: #3A3732; }
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background: #1C1A16; color: #D9D2C6; }
+      }
+    </style>
   </head>
   <body>
+    <div id="loading"><div id="loading-spinner"></div></div>
     <div id="root"></div>
     <script type="module" src="/src/renderer/main.tsx"></script>
   </body>
