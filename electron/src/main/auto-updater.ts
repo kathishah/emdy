@@ -16,7 +16,17 @@ function loadState(): UpdateState {
     const data = fsSync.readFileSync(statePath, 'utf-8');
     return { skippedVersion: null, ...JSON.parse(data) };
   } catch {
-    return { skippedVersion: null };
+    // Migrate from old update-check.json if it exists
+    const oldPath = path.join(app.getPath('userData'), 'update-check.json');
+    try {
+      const oldData = JSON.parse(fsSync.readFileSync(oldPath, 'utf-8'));
+      const migrated: UpdateState = { skippedVersion: oldData.skippedVersion || null };
+      saveState(migrated);
+      fsSync.unlinkSync(oldPath);
+      return migrated;
+    } catch {
+      return { skippedVersion: null };
+    }
   }
 }
 
