@@ -2,35 +2,61 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useTransition } from '../hooks/useTransition';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
-type UpdateState = 'checking' | 'up-to-date' | 'error' | { version: string; url: string; notes?: string[] };
+type DialogState =
+  | 'checking'
+  | 'up-to-date'
+  | 'error'
+  | { version: string; notes: string | null };
 
 interface UpdateDialogProps {
   visible: boolean;
   onClose: () => void;
-  initialResult?: { version: string; url: string; notes?: string[] } | null;
+  readyVersion?: { version: string; notes: string | null } | null;
 }
 
-export function UpdateDialog({ visible, onClose, initialResult }: UpdateDialogProps) {
+export function UpdateDialog({ visible, onClose, readyVersion }: UpdateDialogProps) {
   const { mounted, active } = useTransition(visible);
   const modalRef = useRef<HTMLDivElement>(null);
-  const [state, setState] = useState<UpdateState>('checking');
+  const [state, setState] = useState<DialogState>('checking');
   const [currentVersion, setCurrentVersion] = useState('');
   useFocusTrap(modalRef, visible);
 
   useEffect(() => {
-    if (visible) {
-      window.electronAPI.getAppVersion().then(setCurrentVersion);
-      if (initialResult) {
-        setState(initialResult);
-      } else {
-        setState('checking');
-        window.electronAPI.checkForUpdate().then(({ ok, update }) => {
-          if (!ok) setState('error');
-          else setState(update ?? 'up-to-date');
-        });
-      }
+    if (!visible) return;
+
+    window.electronAPI.getAppVersion().then(setCurrentVersion);
+
+    if (readyVersion) {
+      setState(readyVersion);
+      return;
     }
-  }, [visible, initialResult]);
+
+    setState('checking');
+    window.electronAPI.checkForUpdate().then((result) => {
+      if (result.status === 'downloaded' && result.version) {
+        setState({ version: result.version, notes: result.notes ?? null });
+      } else if (result.status === 'error') {
+        setState('error');
+      } else if (result.status === 'checking') {
+        // Wait for status events
+        const removeStatus = window.electronAPI.onUpdateStatus((status) => {
+          if (status === 'not-available') {
+            setState('up-to-date');
+            removeStatus();
+          } else if (status === 'error') {
+            setState('error');
+            removeStatus();
+          }
+        });
+        const removeReady = window.electronAPI.onUpdateReady((info) => {
+          setState({ version: info.version, notes: info.notes });
+          removeReady();
+        });
+        // Clean up listeners when dialog closes
+        return () => { removeStatus(); removeReady(); };
+      }
+    });
+  }, [visible, readyVersion]);
 
   if (!mounted) return null;
 
@@ -54,32 +80,20 @@ export function UpdateDialog({ visible, onClose, initialResult }: UpdateDialogPr
           <p className="update-message">Checking for updates…</p>
         )}
         {state === 'up-to-date' && (
-          <>
-            <p className="update-message">Emdy {currentVersion} is the latest version.</p>
-          </>
+          <p className="update-message">Emdy {currentVersion} is the latest version.</p>
         )}
         {state === 'error' && (
           <p className="update-message">Could not check for updates. Check your internet connection.</p>
         )}
         {typeof state === 'object' && (
           <>
-            <p className="update-message">Emdy {state.version} is available. You have {currentVersion}.</p>
-            {state.notes && state.notes.length > 0 && (
-              <div className="update-notes-section">
-                <h3 className="update-notes-heading">Changes in this update</h3>
-                <ul className="update-notes">
-                  {state.notes.map((note, i) => (
-                    <li key={i}>{note}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <p className="update-message">Emdy {state.version} is ready to install. You have {currentVersion}.</p>
             <div className="update-actions">
               <button
                 className="update-download-btn"
-                onClick={() => window.electronAPI.openExternal(state.url)}
+                onClick={() => window.electronAPI.installUpdate()}
               >
-                Download
+                Restart to Update
               </button>
               <button
                 className="update-skip-btn"
