@@ -16,14 +16,20 @@ export function AboutDialog({ visible, onClose }: AboutDialogProps) {
   const { mounted, active } = useTransition(visible);
   const modalRef = useRef<HTMLDivElement>(null);
   const [version, setVersion] = useState('');
-  const [update, setUpdate] = useState<{ version: string; url: string } | null | 'checking'>('checking');
+  const [update, setUpdate] = useState<{ version: string } | null | 'checking'>('checking');
   useFocusTrap(modalRef, visible);
 
   useEffect(() => {
     if (visible) {
       window.electronAPI.getAppVersion().then(setVersion);
       setUpdate('checking');
-      window.electronAPI.checkForUpdate().then(({ ok, update }) => setUpdate(ok ? update : null));
+      window.electronAPI.getUpdateStatus().then((result) => {
+        if (result.status === 'downloaded' && result.version) {
+          setUpdate({ version: result.version });
+        } else {
+          setUpdate(null);
+        }
+      });
       if (modalRef.current) {
         const firstFocusable = modalRef.current.querySelector<HTMLElement>('button, [href], input');
         firstFocusable?.focus();
@@ -53,7 +59,7 @@ export function AboutDialog({ visible, onClose }: AboutDialogProps) {
         <p className="about-version">
           Version {version}
           {update === 'checking' ? '' : update ? (
-            <> · <button className="about-update-link" onClick={() => window.electronAPI.openExternal(update.url)}>{update.version} available</button></>
+            <> · <span className="about-update-link">{update.version} ready — restart to install</span></>
           ) : (
             <span className="about-up-to-date"> · Up to date</span>
           )}

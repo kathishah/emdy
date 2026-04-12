@@ -46,7 +46,7 @@ export function App() {
   const [nudgeState, setNudgeState] = useState<NudgeState | null>(null);
   const [aboutVisible, setAboutVisible] = useState(false);
   const [updateVisible, setUpdateVisible] = useState(false);
-  const [updateInitialResult, setUpdateInitialResult] = useState<{ version: string; url: string } | null>(null);
+  const [updateReady, setUpdateReady] = useState<{ version: string; notes: string | null } | null>(null);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -228,15 +228,23 @@ export function App() {
     window.electronAPI.getNudgeState().then(setNudgeState);
   }, []);
 
-  // Check for updates on launch (silently — only show dialog if update available)
+  // Listen for silent auto-update completion
   useEffect(() => {
-    window.electronAPI.checkForUpdateProactive().then((result) => {
-      if (result) {
-        setUpdateInitialResult(result);
-        setUpdateVisible(true);
+    // Check if an update was already downloaded before this component mounted
+    window.electronAPI.getUpdateStatus().then((result) => {
+      if (result.status === 'downloaded' && result.version) {
+        setUpdateReady({ version: result.version, notes: result.notes ?? null });
+        addToast('Update ready — restart to install', 'info');
       }
     });
-  }, []);
+
+    const removeReady = window.electronAPI.onUpdateReady((info) => {
+      setUpdateReady(info);
+      addToast('Update ready — restart to install', 'info');
+    });
+
+    return () => { removeReady(); };
+  }, [addToast]);
 
   // Handle menu events from main process
   useEffect(() => {
@@ -261,7 +269,7 @@ export function App() {
         case 'theme-cool': display.setColorTheme('cool'); break;
         case 'theme-neutral': display.setColorTheme('neutral'); break;
         case 'show-about': setAboutVisible(true); break;
-        case 'check-for-updates': setUpdateInitialResult(null); setUpdateVisible(true); break;
+        case 'check-for-updates': setUpdateVisible(true); break;
       }
     });
 
@@ -419,7 +427,7 @@ export function App() {
       <UpdateDialog
         visible={updateVisible}
         onClose={() => setUpdateVisible(false)}
-        initialResult={updateInitialResult}
+        readyVersion={updateReady}
       />
       <div className="main-layout">
         {dirEntries && (
