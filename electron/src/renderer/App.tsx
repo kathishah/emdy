@@ -234,17 +234,18 @@ export function App() {
     window.electronAPI.getUpdateStatus().then((result) => {
       if (result.status === 'downloaded' && result.version) {
         setUpdateReady({ version: result.version, notes: result.notes ?? null });
-        addToast('Update ready — restart to install', 'info');
+        setUpdateVisible(true);
       }
     });
 
     const removeReady = window.electronAPI.onUpdateReady((info) => {
       setUpdateReady(info);
-      addToast('Update ready — restart to install', 'info');
+      setUpdateVisible(true);
     });
 
     return () => { removeReady(); };
-  }, [addToast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle menu events from main process
   useEffect(() => {
