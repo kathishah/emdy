@@ -111,9 +111,13 @@ export function registerFileHandlers() {
     } else {
       win.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
     }
-    win.webContents.once('did-finish-load', () => {
-      win.webContents.send('file:open', filePath, content);
-    });
+    const handleReady = (_event: Electron.Event, channel: string) => {
+      if (channel === 'renderer:ready') {
+        win.webContents.removeListener('ipc-message', handleReady);
+        win.webContents.send('file:open', filePath, content);
+      }
+    };
+    win.webContents.on('ipc-message', handleReady);
   });
 
   ipcMain.handle('search:everything', async (_event, query: string) => {

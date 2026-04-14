@@ -665,6 +665,81 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .content-column { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .content-wrapper { flex: 1; display: flex; overflow: hidden; }
 
+/* ---- Outline panel ---- */
+
+.outline-panel {
+  width: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width var(--transition-normal) ease, margin var(--transition-normal) ease;
+}
+
+.outline-panel.open {
+  width: var(--outline-width);
+  margin: 0 0 var(--space-2) var(--space-2);
+}
+
+.outline-panel-inner {
+  width: var(--outline-width);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.outline-heading {
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.outline-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0 var(--space-2);
+}
+
+.outline-list::-webkit-scrollbar { width: var(--scrollbar-width-narrow); }
+.outline-list::-webkit-scrollbar-track { background: transparent; }
+.outline-list::-webkit-scrollbar-thumb { background: transparent; border-radius: var(--radius-sm); }
+.outline-list:hover::-webkit-scrollbar-thumb { background: var(--border); }
+
+.outline-item {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.outline-item:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.outline-item.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+.outline-item-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 /* ---- Minimap ---- */
 
 .minimap {
@@ -1328,6 +1403,7 @@ input:focus:not(:focus-visible),
   margin-top: 1.5em;
   margin-bottom: 0.5em;
   line-height: 1.3;
+  scroll-margin-top: var(--space-6);
 }
 
 .markdown-body h1 { font-size: 2em; }

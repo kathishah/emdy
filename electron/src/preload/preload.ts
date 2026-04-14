@@ -55,6 +55,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Window
   toggleMaximize: () => ipcRenderer.invoke('window:toggle-maximize'),
+  notifyRendererReady: () => ipcRenderer.send('renderer:ready'),
 
   // Menu state
   setMenuHasFile: (hasFile: boolean) => ipcRenderer.invoke('menu:set-has-file', hasFile),

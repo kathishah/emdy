@@ -5,6 +5,7 @@ import { Toolbar } from './components/Toolbar';
 import { CommandPalette } from './components/CommandPalette';
 import { SettingsModal } from './components/SettingsModal';
 import { Minimap } from './components/Minimap';
+import { OutlinePanel } from './components/OutlinePanel';
 import { StatusBar } from './components/StatusBar';
 import { EmptyState } from './components/EmptyState';
 import { WelcomeView } from './components/WelcomeView';
@@ -18,7 +19,7 @@ import { useAnnounce } from './hooks/useAnnounce';
 import { useDisplaySettings } from './hooks/useDisplaySettings';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useFileWatcher } from './hooks/useFileWatcher';
-import type { FileEntry, NudgeState } from './lib/types';
+import type { FileEntry, NudgeState, OutlineHeading } from './lib/types';
 import { perfMark, perfMeasure } from './lib/perf';
 
 let toastId = 0;
@@ -38,6 +39,7 @@ export function App() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [searchVisible, setSearchVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [outlineVisible, setOutlineVisible] = useState(true);
   const [minimapVisible, setMinimapVisible] = useState(true);
   const [fileDeleted, setFileDeleted] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -47,6 +49,8 @@ export function App() {
   const [aboutVisible, setAboutVisible] = useState(false);
   const [updateVisible, setUpdateVisible] = useState(false);
   const [updateReady, setUpdateReady] = useState<{ version: string; notes: string | null } | null>(null);
+  const [outlineHeadings, setOutlineHeadings] = useState<OutlineHeading[]>([]);
+  const [activeOutlineId, setActiveOutlineId] = useState<string | null>(null);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -228,6 +232,117 @@ export function App() {
     window.electronAPI.getNudgeState().then(setNudgeState);
   }, []);
 
+  const syncOutlineHeadings = useCallback(() => {
+    const markdownBody = contentRef.current?.querySelector('.markdown-body');
+    if (!markdownBody) {
+      setOutlineHeadings([]);
+      setActiveOutlineId(null);
+      return;
+    }
+
+    const nextHeadings = Array.from(markdownBody.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6'))
+      .map((heading) => {
+        const id = heading.dataset.outlineId || heading.id;
+        const text = heading.textContent?.trim() || '';
+        const level = Number(heading.tagName.slice(1)) as OutlineHeading['level'];
+
+        if (!id || !text) return null;
+        return { id, text, level };
+      })
+      .filter((heading): heading is OutlineHeading => heading !== null);
+
+    setOutlineHeadings(nextHeadings);
+    setActiveOutlineId((current) => (
+      current && nextHeadings.some((heading) => heading.id === current)
+        ? current
+        : nextHeadings[0]?.id ?? null
+    ));
+  }, []);
+
+  useEffect(() => {
+    if (content === null) {
+      setOutlineHeadings([]);
+      setActiveOutlineId(null);
+      return;
+    }
+
+    let frame = requestAnimationFrame(syncOutlineHeadings);
+    const contentNode = contentRef.current;
+    if (!contentNode) {
+      return () => cancelAnimationFrame(frame);
+    }
+
+    const observer = new MutationObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(syncOutlineHeadings);
+    });
+
+    observer.observe(contentNode, { childList: true, subtree: true, characterData: true });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [content, syncOutlineHeadings]);
+
+  const handleOutlineSelect = useCallback((id: string) => {
+    const container = scrollContainerRef.current;
+    const target = contentRef.current?.querySelector<HTMLElement>(`[data-outline-id="${id}"]`);
+    if (!container || !target) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const nextTop = container.scrollTop + (targetRect.top - containerRect.top) - 24;
+
+    container.scrollTo({
+      top: Math.max(0, nextTop),
+      behavior: 'smooth',
+    });
+    setActiveOutlineId(id);
+  }, []);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const contentNode = contentRef.current;
+    if (!container || !contentNode || outlineHeadings.length === 0) {
+      setActiveOutlineId(null);
+      return;
+    }
+
+    let frame = 0;
+    const updateActiveHeading = () => {
+      const containerTop = container.getBoundingClientRect().top;
+      let nextActiveId = outlineHeadings[0]?.id ?? null;
+
+      for (const heading of outlineHeadings) {
+        const element = contentNode.querySelector<HTMLElement>(`[data-outline-id="${heading.id}"]`);
+        if (!element) continue;
+        if (element.getBoundingClientRect().top - containerTop <= 48) {
+          nextActiveId = heading.id;
+        } else {
+          break;
+        }
+      }
+
+      setActiveOutlineId(nextActiveId);
+    };
+
+    const scheduleUpdate = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateActiveHeading);
+    };
+
+    scheduleUpdate();
+    container.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      container.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+    };
+  }, [outlineHeadings]);
+
   // Listen for silent auto-update completion
   useEffect(() => {
     // Check if an update was already downloaded before this component mounted
@@ -244,7 +359,6 @@ export function App() {
     });
 
     return () => { removeReady(); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle menu events from main process
@@ -309,6 +423,8 @@ export function App() {
       }
     });
 
+    window.electronAPI.notifyRendererReady();
+
     return () => { removeMenu(); removeFileOpen(); removeDirOpen(); };
   }, [handleOpen, handleExportPDF, display, addToast]);
 
@@ -372,6 +488,12 @@ export function App() {
       <main id="main-content" className="content-column">
         <SupportBanner nudgeState={nudgeState} />
         <div className="content-wrapper">
+          <OutlinePanel
+            visible={outlineVisible}
+            headings={outlineHeadings}
+            activeHeadingId={activeOutlineId}
+            onHeadingSelect={handleOutlineSelect}
+          />
           <div className={`content-area${minimapVisible ? ' hide-scrollbar' : ''}`} ref={scrollContainerRef}>
             <MarkdownView
               content={content}
@@ -413,6 +535,9 @@ export function App() {
             sidebarVisible={sidebarVisible}
             hasSidebar={dirEntries !== null}
             onToggleSidebar={() => setSidebarVisible((v) => !v)}
+            outlineVisible={outlineVisible}
+            hasOutline={outlineHeadings.length > 0}
+            onToggleOutline={() => setOutlineVisible((v) => !v)}
             minimapVisible={minimapVisible}
             onToggleMinimap={() => setMinimapVisible((v) => !v)}
             onSearch={() => setSearchVisible((v) => !v)}

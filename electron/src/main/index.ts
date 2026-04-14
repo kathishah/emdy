@@ -21,6 +21,8 @@ app.commandLine.appendSwitch('use-mock-keychain');
 
 let mainWindow: BrowserWindow | null = null;
 let pendingFilePath: string | null = null;
+const rendererReadyContents = new Set<number>();
+const queuedOpenPaths = new Map<number, string>();
 
 // Background colors per theme to avoid white flash on launch
 const BG_COLORS: Record<string, { light: string; dark: string }> = {
@@ -30,6 +32,59 @@ const BG_COLORS: Record<string, { light: string; dark: string }> = {
   fresh:   { light: '#FFFBF0', dark: '#0A1628' },
   neon:    { light: '#F4F2F8', dark: '#050510' },
 };
+
+function getCliOpenPath(argv: string[]): string | null {
+  const args = process.defaultApp ? argv.slice(2) : argv.slice(1);
+  const candidate = args.find((arg) => arg && !arg.startsWith('-'));
+  if (!candidate) return null;
+  return path.resolve(candidate);
+}
+
+async function openPathInWindow(win: BrowserWindow, filePath: string) {
+  const stat = await fs.stat(filePath);
+  if (stat.isDirectory()) {
+    addAllowedRoot(filePath);
+    setCurrentPaths({ dirPath: filePath });
+    const entries = await scanDirectory(filePath);
+    win.webContents.send('dir:open', filePath, entries);
+  } else {
+    addAllowedRoot(path.dirname(filePath));
+    setCurrentPaths({ filePath });
+    const content = await fs.readFile(filePath, 'utf-8');
+    win.webContents.send('file:open', filePath, content);
+    app.addRecentDocument(filePath);
+  }
+}
+
+async function flushQueuedPath(win: BrowserWindow) {
+  const queuedPath = queuedOpenPaths.get(win.webContents.id);
+  if (!queuedPath) return;
+  queuedOpenPaths.delete(win.webContents.id);
+  await openPathInWindow(win, queuedPath);
+}
+
+async function queueOrOpenPath(filePath: string) {
+  const resolvedPath = path.resolve(filePath);
+  const win = mainWindow || BrowserWindow.getAllWindows()[0];
+  if (!win) {
+    pendingFilePath = resolvedPath;
+    return;
+  }
+
+  if (rendererReadyContents.has(win.webContents.id) && !win.webContents.isLoading()) {
+    await openPathInWindow(win, resolvedPath);
+  } else {
+    queuedOpenPaths.set(win.webContents.id, resolvedPath);
+  }
+}
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+
+pendingFilePath = getCliOpenPath(process.argv);
 
 const createWindow = () => {
   const settings = getSettings();
@@ -52,51 +107,73 @@ const createWindow = () => {
       sandbox: true,
     },
   });
+  const win = mainWindow;
+  const webContentsId = win.webContents.id;
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
+  win.once('ready-to-show', () => {
+    win.show();
   });
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(
+    win.loadFile(
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
 
-  hardenWindow(mainWindow);
+  hardenWindow(win);
+  rendererReadyContents.delete(webContentsId);
 
-  // Send pending file/directory from dock drop / double-click during launch
-  mainWindow.webContents.once('did-finish-load', async () => {
-    if (pendingFilePath) {
-      try {
-        const stat = await fs.stat(pendingFilePath);
-        if (stat.isDirectory()) {
-          addAllowedRoot(pendingFilePath);
-          setCurrentPaths({ dirPath: pendingFilePath });
-          const entries = await scanDirectory(pendingFilePath);
-          mainWindow?.webContents.send('dir:open', pendingFilePath, entries);
-        } else {
-          addAllowedRoot(path.dirname(pendingFilePath));
-          setCurrentPaths({ filePath: pendingFilePath });
-          const content = await fs.readFile(pendingFilePath, 'utf-8');
-          mainWindow?.webContents.send('file:open', pendingFilePath, content);
-          app.addRecentDocument(pendingFilePath);
-        }
-      } catch {
-        // File/directory can't be read
-      }
-      pendingFilePath = null;
+  if (pendingFilePath) {
+    queuedOpenPaths.set(webContentsId, pendingFilePath);
+    pendingFilePath = null;
+  }
+
+  win.on('closed', () => {
+    rendererReadyContents.delete(webContentsId);
+    queuedOpenPaths.delete(webContentsId);
+    if (mainWindow === win) {
+      mainWindow = null;
     }
   });
 };
+
+app.on('second-instance', async (_event, argv) => {
+  const cliPath = getCliOpenPath(argv);
+  if (!cliPath) return;
+
+  const win = mainWindow || BrowserWindow.getAllWindows()[0];
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  }
+
+  try {
+    await queueOrOpenPath(cliPath);
+  } catch {
+    // Ignore invalid path arguments
+  }
+});
 
 ipcMain.handle('window:toggle-maximize', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (!win) return;
   if (win.isMaximized()) win.unmaximize();
   else win.maximize();
+});
+
+ipcMain.on('renderer:ready', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return;
+
+  rendererReadyContents.add(event.sender.id);
+
+  try {
+    await flushQueuedPath(win);
+  } catch {
+    // Ignore unreadable startup paths
+  }
 });
 
 registerFileHandlers();
@@ -186,28 +263,10 @@ app.on('activate', () => {
 // Handle opening files/directories via OS (double-click, drag to dock, Open Recent)
 app.on('open-file', async (event, filePath) => {
   event.preventDefault();
-  const win = mainWindow || BrowserWindow.getAllWindows()[0];
-  if (win && win.webContents && !win.webContents.isLoading()) {
-    try {
-      const stat = await fs.stat(filePath);
-      if (stat.isDirectory()) {
-        addAllowedRoot(filePath);
-        setCurrentPaths({ dirPath: filePath });
-        const entries = await scanDirectory(filePath);
-        win.webContents.send('dir:open', filePath, entries);
-      } else {
-        addAllowedRoot(path.dirname(filePath));
-        setCurrentPaths({ filePath });
-        const content = await fs.readFile(filePath, 'utf-8');
-        win.webContents.send('file:open', filePath, content);
-        app.addRecentDocument(filePath);
-      }
-    } catch {
-      // File/directory can't be read
-    }
-  } else {
-    // App is still launching — queue the path for when the window is ready
-    pendingFilePath = filePath;
+  try {
+    await queueOrOpenPath(filePath);
+  } catch {
+    // File/directory can't be read
   }
 });
 

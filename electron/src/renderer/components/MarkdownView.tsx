@@ -14,8 +14,46 @@ interface MarkdownViewProps {
   contentRef?: React.RefObject<HTMLDivElement | null>;
 }
 
+function getNodeText(node: React.ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(getNodeText).join('');
+  if (React.isValidElement(node)) return getNodeText(node.props.children);
+  return '';
+}
+
+function slugifyHeading(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
 export const MarkdownView = React.memo(function MarkdownView({ content, colors, filePath, style, contentRef }: MarkdownViewProps) {
   const codeTheme = useMemo(() => buildPrismTheme(colors), [colors]);
+  const headingIds = new Map<string, number>();
+
+  const createHeading = (level: 1 | 2 | 3 | 4 | 5 | 6) => {
+    return function Heading({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+      const text = getNodeText(children).trim() || `section-${level}`;
+      const baseId = slugifyHeading(text) || `section-${level}`;
+      const seen = headingIds.get(baseId) ?? 0;
+      headingIds.set(baseId, seen + 1);
+      const id = seen === 0 ? baseId : `${baseId}-${seen + 1}`;
+
+      return React.createElement(
+        `h${level}`,
+        {
+          ...props,
+          id,
+          'data-outline-id': id,
+          'data-outline-level': level,
+        },
+        children,
+      );
+    };
+  };
 
   return (
     <div className="markdown-view" style={style} ref={contentRef}>
@@ -92,6 +130,12 @@ export const MarkdownView = React.memo(function MarkdownView({ content, colors, 
                 </div>
               );
             },
+            h1: createHeading(1),
+            h2: createHeading(2),
+            h3: createHeading(3),
+            h4: createHeading(4),
+            h5: createHeading(5),
+            h6: createHeading(6),
           }}
         >
           {content}
