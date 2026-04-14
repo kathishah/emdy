@@ -56,6 +56,7 @@ export const layout = {
   sidebarWidth: '240px',
   sidebarMinWidth: '200px',
   sidebarMaxWidth: '320px',
+  outlineWidth: '220px',
   contentMaxWidth: '680px',
   minimapWidth: '140px',
   toolbarBtnSize: '28px',

@@ -40,6 +40,12 @@ export interface SearchResult {
   type: 'file' | 'content';
 }
 
+export interface OutlineHeading {
+  id: string;
+  text: string;
+  level: 1 | 2 | 3 | 4 | 5 | 6;
+}
+
 export type OpenDialogResult =
   | { type: 'file'; filePath: string; content: string }
   | { type: 'directory'; dirPath: string; entries: FileEntry[] }
@@ -70,6 +76,7 @@ export interface ElectronAPI {
   getAccentColor: () => Promise<string>;
   onAccentColorChanged: (callback: (color: string) => void) => () => void;
   toggleMaximize: () => Promise<void>;
+  notifyRendererReady: () => void;
   getSettings: () => Promise<DisplaySettings>;
   getSettingsSync: () => DisplaySettings;
   setSetting: (key: string, value: unknown) => Promise<void>;

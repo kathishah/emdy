@@ -150,10 +150,19 @@ export async function openPathInNewWindow(pathToOpen: string): Promise<void> {
     }
   };
 
+  const sendWhenRendererReady = (sendPayload: () => void) => {
+    const handleReady = (_event: Electron.Event, channel: string) => {
+      if (channel !== 'renderer:ready') return;
+      win.webContents.removeListener('ipc-message', handleReady);
+      if (!win.isDestroyed()) sendPayload();
+    };
+    win.webContents.on('ipc-message', handleReady);
+  };
+
   if (stat.isDirectory()) {
     addAllowedRoot(pathToOpen);
     const entries = await scanDirectory(pathToOpen);
-    win.webContents.once('did-finish-load', () => {
+    sendWhenRendererReady(() => {
       win.webContents.send('dir:open', pathToOpen, entries);
     });
     loadWithPendingFlag();
@@ -161,7 +170,7 @@ export async function openPathInNewWindow(pathToOpen: string): Promise<void> {
     if (!isPathAllowed(pathToOpen)) addAllowedRoot(path.dirname(pathToOpen));
     const content = await fs.readFile(pathToOpen, 'utf-8');
     app.addRecentDocument(pathToOpen);
-    win.webContents.once('did-finish-load', () => {
+    sendWhenRendererReady(() => {
       win.webContents.send('file:open', pathToOpen, content);
     });
     loadWithPendingFlag();

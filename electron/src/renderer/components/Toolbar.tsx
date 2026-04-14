@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
+  ListTree,
   PanelLeft,
   PanelRight,
   Search,
@@ -33,6 +34,9 @@ interface ToolbarProps {
   sidebarVisible: boolean;
   hasSidebar: boolean;
   onToggleSidebar: () => void;
+  outlineVisible: boolean;
+  hasOutline: boolean;
+  onToggleOutline: () => void;
   minimapVisible: boolean;
   onToggleMinimap: () => void;
   onSearch: () => void;
@@ -63,6 +67,9 @@ export function Toolbar({
   sidebarVisible,
   hasSidebar,
   onToggleSidebar,
+  outlineVisible,
+  hasOutline,
+  onToggleOutline,
   minimapVisible,
   onToggleMinimap,
   onSearch,
@@ -292,6 +299,19 @@ export function Toolbar({
               <Settings {...ICON} />
             </button>
 
+            {hasOutline && (
+              <button
+                className={`toolbar-btn${outlineVisible ? ' on' : ''}`}
+                onClick={onToggleOutline}
+                data-tooltip="Toggle outline"
+                aria-label="Toggle outline"
+                aria-expanded={outlineVisible}
+                data-toolbar-btn
+              >
+                <ListTree {...ICON} />
+              </button>
+            )}
+
             {/* Minimap — rightmost */}
             <button
               className={`toolbar-btn${minimapVisible ? ' on' : ''}`}
@@ -369,10 +389,27 @@ export function Toolbar({
                   <button className="toolbar-dropdown-item" onClick={() => { onCopyHTML(); setOverflowOpen(false); }} role="menuitem">
                     <Copy size={14} strokeWidth={1.5} /> Copy as formatted text
                   </button>
+                  {hasOutline && (
+                    <button className="toolbar-dropdown-item" onClick={() => { onToggleOutline(); setOverflowOpen(false); }} role="menuitem">
+                      <ListTree size={14} strokeWidth={1.5} /> {outlineVisible ? 'Hide outline' : 'Show outline'}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
 
+            {hasOutline && (
+              <button
+                className={`toolbar-btn${outlineVisible ? ' on' : ''}`}
+                onClick={onToggleOutline}
+                data-tooltip="Toggle outline"
+                aria-label="Toggle outline"
+                aria-expanded={outlineVisible}
+                data-toolbar-btn
+              >
+                <ListTree {...ICON} />
+              </button>
+            )}
 
             {/* Minimap — rightmost even in collapsed */}
             <button

@@ -36,6 +36,22 @@ interface MarkdownViewProps {
   onMatchesChanged?: (count: number, isCapped: boolean, positions: number[]) => void;
 }
 
+function getNodeText(node: React.ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(getNodeText).join('');
+  if (React.isValidElement<{ children?: React.ReactNode }>(node)) return getNodeText(node.props.children);
+  return '';
+}
+
+function slugifyHeading(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
 const MAX_MATCHES = 1000;
 const LANGUAGE_PATTERN = /language-(\w+)/;
 
@@ -132,74 +148,104 @@ export const MarkdownView = React.memo(
       []
     );
 
-    const components = useMemo<Components>(() => ({
-      li({ children, ...props }) {
-        const childArray = React.Children.toArray(children);
-        const hasCheckbox = childArray.some(
-          (child) => React.isValidElement(child) && (child as React.ReactElement<{ type?: string }>).props?.type === 'checkbox'
-        );
-        if (hasCheckbox) {
-          const checkbox = childArray.find(
+    const components = useMemo<Components>(() => {
+      const headingIds = new Map<string, number>();
+      const createHeading = (level: 1 | 2 | 3 | 4 | 5 | 6) => {
+        return function Heading({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+          const text = getNodeText(children).trim() || `section-${level}`;
+          const baseId = slugifyHeading(text) || `section-${level}`;
+          const seen = headingIds.get(baseId) ?? 0;
+          headingIds.set(baseId, seen + 1);
+          const id = seen === 0 ? baseId : `${baseId}-${seen + 1}`;
+
+          return React.createElement(
+            `h${level}`,
+            {
+              ...props,
+              id,
+              'data-outline-id': id,
+              'data-outline-level': level,
+            },
+            children,
+          );
+        };
+      };
+
+      return {
+        li({ children, ...props }) {
+          const childArray = React.Children.toArray(children);
+          const hasCheckbox = childArray.some(
             (child) => React.isValidElement(child) && (child as React.ReactElement<{ type?: string }>).props?.type === 'checkbox'
           );
-          const rest = childArray.filter((child) => child !== checkbox);
+          if (hasCheckbox) {
+            const checkbox = childArray.find(
+              (child) => React.isValidElement(child) && (child as React.ReactElement<{ type?: string }>).props?.type === 'checkbox'
+            );
+            const rest = childArray.filter((child) => child !== checkbox);
+            return (
+              <li {...props} className="task-list-item">
+                {checkbox}
+                <div className="task-list-text">{rest}</div>
+              </li>
+            );
+          }
+          return <li {...props}>{children}</li>;
+        },
+        code({ className, children, ...props }) {
+          const match = (className || '').match(LANGUAGE_PATTERN);
+          const codeString = String(children).replace(/\n$/, '');
+          if (match) {
+            return (
+              <CodeBlock language={match[1]} codeTheme={codeTheme}>
+                {codeString}
+              </CodeBlock>
+            );
+          }
           return (
-            <li {...props} className="task-list-item">
-              {checkbox}
-              <div className="task-list-text">{rest}</div>
-            </li>
+            <code className={className} {...props}>
+              {children}
+            </code>
           );
-        }
-        return <li {...props}>{children}</li>;
-      },
-      code({ className, children, ...props }) {
-        const match = (className || '').match(LANGUAGE_PATTERN);
-        const codeString = String(children).replace(/\n$/, '');
-        if (match) {
+        },
+        a({ href, children, ...props }) {
           return (
-            <CodeBlock language={match[1]} codeTheme={codeTheme}>
-              {codeString}
-            </CodeBlock>
+            <a
+              href={href}
+              {...props}
+              onClick={(e) => {
+                if (href) {
+                  e.preventDefault();
+                  window.electronAPI.openExternal(href);
+                }
+              }}
+            >
+              {children}
+            </a>
           );
-        }
-        return (
-          <code className={className} {...props}>
-            {children}
-          </code>
-        );
-      },
-      a({ href, children, ...props }) {
-        return (
-          <a
-            href={href}
-            {...props}
-            onClick={(e) => {
-              if (href) {
-                e.preventDefault();
-                window.electronAPI.openExternal(href);
-              }
-            }}
-          >
-            {children}
-          </a>
-        );
-      },
-      img({ src, alt, ...props }) {
-        let resolvedSrc = src || '';
-        if (filePath && resolvedSrc && !resolvedSrc.startsWith('http') && !resolvedSrc.startsWith('data:') && !resolvedSrc.startsWith('file:')) {
-          const dir = filePath.replace(/\/[^/]+$/, '');
-          resolvedSrc = `local-file://${dir}/${encodeURIComponent(resolvedSrc).replace(/%2F/g, '/')}`;
-        }
-        return <img src={resolvedSrc} alt={alt || ''} {...props} />;
-      },
-      table({ children, ...props }) {
-        return (
-          <div className="table-wrapper">
-            <table {...props}>{children}</table>
-          </div>
-        );
-      },
-    }), [filePath, codeTheme]);
+        },
+        img({ src, alt, ...props }) {
+          let resolvedSrc = src || '';
+          if (filePath && resolvedSrc && !resolvedSrc.startsWith('http') && !resolvedSrc.startsWith('data:') && !resolvedSrc.startsWith('file:')) {
+            const dir = filePath.replace(/\/[^/]+$/, '');
+            resolvedSrc = `local-file://${dir}/${encodeURIComponent(resolvedSrc).replace(/%2F/g, '/')}`;
+          }
+          return <img src={resolvedSrc} alt={alt || ''} {...props} />;
+        },
+        table({ children, ...props }) {
+          return (
+            <div className="table-wrapper">
+              <table {...props}>{children}</table>
+            </div>
+          );
+        },
+        h1: createHeading(1),
+        h2: createHeading(2),
+        h3: createHeading(3),
+        h4: createHeading(4),
+        h5: createHeading(5),
+        h6: createHeading(6),
+      };
+    }, [filePath, codeTheme, content]);
 
     return (
       <div className="markdown-view" style={style} ref={contentRef}>
