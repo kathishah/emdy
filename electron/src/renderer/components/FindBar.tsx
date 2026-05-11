@@ -78,7 +78,7 @@ export function FindBar({
     const term = query.trim();
     const description = term ? `for ${term}` : '';
     announce(`Find bar opened. ${totalMatches} matches ${description}`.trim() + '.');
-  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [visible]);
 
   useEffect(() => {
     if (pulseNonce === undefined || pulseNonce === 0) return;

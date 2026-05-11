@@ -3,7 +3,9 @@ import { afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
-  Element.prototype.scrollIntoView = function scrollIntoView() {};
+  Element.prototype.scrollIntoView = function scrollIntoView() {
+    // jsdom layout stub for components that call scrollIntoView.
+  };
 }
 
 afterEach(() => {

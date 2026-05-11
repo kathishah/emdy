@@ -199,7 +199,7 @@ export function App() {
   useEffect(() => {
     if (!findState || findState.matchCount === 0) return;
     markdownViewRef.current?.scrollToMatch(findState.currentIndex);
-  }, [findState?.currentIndex, findState?.matchCount]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [findState?.currentIndex, findState?.matchCount]);
 
   useEffect(() => {
     if (!findState) return;
