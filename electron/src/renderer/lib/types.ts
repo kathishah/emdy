@@ -8,7 +8,9 @@ export interface FileEntry {
 export type FontFamily = 'sans' | 'serif' | 'mono';
 export type AppTheme = 'light' | 'dark' | 'system';
 export type ColorThemeName = 'warm' | 'cool' | 'neutral' | 'fresh' | 'neon';
-export type ContentWidth = 'narrow' | 'medium' | 'wide';
+export type ContentWidth = 'default' | 'wide';
+
+export const DEFAULT_CONTENT_WIDTH = 680;
 
 export interface DisplaySettings {
   fontFamily: FontFamily;
@@ -47,14 +49,16 @@ export type OpenDialogResult =
   | null;
 
 export interface ElectronAPI {
+  checkPendingOpen: () => Promise<boolean>;
   openDialog: () => Promise<OpenDialogResult>;
+  openDialogInNewWindow: () => Promise<{ opened: true } | null>;
   openFileDialog: () => Promise<{ filePath: string; content: string } | null>;
   openDirDialog: () => Promise<{ dirPath: string; entries: FileEntry[] } | null>;
   readFile: (filePath: string) => Promise<string>;
   scanDirectory: (dirPath: string) => Promise<FileEntry[]>;
   showItemInFolder: (filePath: string) => Promise<void>;
   openInNewWindow: (filePath: string) => Promise<void>;
-  searchEverything: (query: string) => Promise<SearchResult[]>;
+  searchEverything: (query: string, rootPath: string) => Promise<SearchResult[]>;
   watchFile: (filePath: string) => Promise<void>;
   unwatchFile: () => Promise<void>;
   onFileChanged: (callback: (filePath: string) => void) => () => void;
@@ -71,6 +75,7 @@ export interface ElectronAPI {
   toggleMaximize: () => Promise<void>;
   notifyRendererReady: () => void;
   getSettings: () => Promise<DisplaySettings>;
+  getSettingsSync: () => DisplaySettings;
   setSetting: (key: string, value: unknown) => Promise<void>;
   onMenuEvent: (callback: (event: string) => void) => () => void;
   onFileOpen: (callback: (filePath: string, content: string) => void) => () => void;
@@ -82,6 +87,7 @@ export interface ElectronAPI {
   getUpdateStatus: () => Promise<{ status: string; version?: string; notes?: string | null; error?: string }>;
   installUpdate: () => Promise<void>;
   skipUpdate: (version: string) => Promise<void>;
+  getSkippedVersion: () => Promise<string | null>;
   onUpdateReady: (callback: (info: { version: string; notes: string | null }) => void) => () => void;
   onUpdateStatus: (callback: (status: string) => void) => () => void;
   openExternal: (url: string) => Promise<void>;

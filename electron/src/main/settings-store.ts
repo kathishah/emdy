@@ -15,7 +15,7 @@ const defaults: Settings = {
   theme: 'system',
   colorTheme: 'warm',
   zoom: 1.0,
-  contentWidth: 'medium',
+  contentWidth: 'wide',
 };
 
 const settingsPath = path.join(app.getPath('userData'), 'settings.json');
@@ -23,7 +23,8 @@ const settingsPath = path.join(app.getPath('userData'), 'settings.json');
 function load(): Settings {
   try {
     const data = fs.readFileSync(settingsPath, 'utf-8');
-    return { ...defaults, ...JSON.parse(data) };
+    const parsed = { ...defaults, ...JSON.parse(data) } as Settings;
+    return sanitizeSettings(parsed);
   } catch {
     return { ...defaults };
   }
@@ -33,15 +34,20 @@ function save(settings: Settings) {
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), { mode: 0o600 });
 }
 
-const current = load();
-
-export function getSettings(): Settings {
-  return { ...current };
-}
-
 const VALID_FONT_FAMILIES = new Set(['sans', 'serif', 'mono']);
 const VALID_THEMES = new Set(['light', 'dark', 'system']);
 const VALID_COLOR_THEMES = new Set(['warm', 'cool', 'neutral', 'fresh', 'neon']);
+const VALID_CONTENT_WIDTHS = new Set(['default', 'wide']);
+
+function sanitizeSettings(settings: Settings): Settings {
+  return {
+    fontFamily: validateSetting('fontFamily', settings.fontFamily) ? settings.fontFamily : defaults.fontFamily,
+    theme: validateSetting('theme', settings.theme) ? settings.theme : defaults.theme,
+    colorTheme: validateSetting('colorTheme', settings.colorTheme) ? settings.colorTheme : defaults.colorTheme,
+    zoom: validateSetting('zoom', settings.zoom) ? settings.zoom : defaults.zoom,
+    contentWidth: validateSetting('contentWidth', settings.contentWidth) ? settings.contentWidth : defaults.contentWidth,
+  };
+}
 
 function validateSetting(key: string, value: unknown): boolean {
   switch (key) {
@@ -49,13 +55,24 @@ function validateSetting(key: string, value: unknown): boolean {
     case 'theme': return typeof value === 'string' && VALID_THEMES.has(value);
     case 'colorTheme': return typeof value === 'string' && VALID_COLOR_THEMES.has(value);
     case 'zoom': return typeof value === 'number' && value >= 0.5 && value <= 3.0;
+    case 'contentWidth': return typeof value === 'string' && VALID_CONTENT_WIDTHS.has(value);
     default: return false;
   }
+}
+
+const current = load();
+
+export function getSettings(): Settings {
+  return { ...current };
 }
 
 export function registerSettingsHandlers() {
   ipcMain.handle('settings:get', () => {
     return { ...current };
+  });
+
+  ipcMain.on('settings:get-sync', (event) => {
+    event.returnValue = { ...current };
   });
 
   ipcMain.handle('settings:set', (_event, key: string, value: unknown) => {

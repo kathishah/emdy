@@ -1,15 +1,16 @@
-import { app, BrowserWindow, ipcMain, nativeTheme, protocol, net, session, systemPreferences, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, protocol, net, session, systemPreferences, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import started from 'electron-squirrel-startup';
-import { registerFileHandlers, scanDirectory, setCurrentPaths } from './ipc-handlers';
-import { registerSettingsHandlers, registerNudgeHandlers, nudgeTrackAppLaunch, getSettings } from './settings-store';
+import { registerFileHandlers, scanDirectory, openPathInNewWindow } from './ipc-handlers';
+import { registerSettingsHandlers, registerNudgeHandlers, nudgeTrackAppLaunch } from './settings-store';
 import { registerFileWatcher } from './file-watcher';
 import { registerExportHandlers } from './pdf-export';
 import { buildMenu } from './menu';
 import { addAllowedRoot, isPathAllowed, hardenWindow } from './allowed-paths';
 import { setupAutoUpdater, registerAutoUpdaterIPC } from './auto-updater';
+import { getWindowBackgroundColor } from './window-theme';
 
 if (started) {
   app.quit();
@@ -21,17 +22,9 @@ app.commandLine.appendSwitch('use-mock-keychain');
 
 let mainWindow: BrowserWindow | null = null;
 let pendingFilePath: string | null = null;
+let hasOpenedAnyPath = false;
 const rendererReadyContents = new Set<number>();
 const queuedOpenPaths = new Map<number, string>();
-
-// Background colors per theme to avoid white flash on launch
-const BG_COLORS: Record<string, { light: string; dark: string }> = {
-  warm:    { light: '#F5F3EF', dark: '#1C1A16' },
-  cool:    { light: '#F5F5F4', dark: '#1A1A19' },
-  neutral: { light: '#F0F0F0', dark: '#1C1C1E' },
-  fresh:   { light: '#FFFBF0', dark: '#0A1628' },
-  neon:    { light: '#F4F2F8', dark: '#050510' },
-};
 
 function getCliOpenPath(argv: string[]): string | null {
   const args = process.defaultApp ? argv.slice(2) : argv.slice(1);
@@ -44,16 +37,15 @@ async function openPathInWindow(win: BrowserWindow, filePath: string) {
   const stat = await fs.stat(filePath);
   if (stat.isDirectory()) {
     addAllowedRoot(filePath);
-    setCurrentPaths({ dirPath: filePath });
     const entries = await scanDirectory(filePath);
     win.webContents.send('dir:open', filePath, entries);
   } else {
     addAllowedRoot(path.dirname(filePath));
-    setCurrentPaths({ filePath });
     const content = await fs.readFile(filePath, 'utf-8');
     win.webContents.send('file:open', filePath, content);
     app.addRecentDocument(filePath);
   }
+  hasOpenedAnyPath = true;
 }
 
 async function flushQueuedPath(win: BrowserWindow) {
@@ -87,17 +79,13 @@ if (!gotSingleInstanceLock) {
 pendingFilePath = getCliOpenPath(process.argv);
 
 const createWindow = () => {
-  const settings = getSettings();
-  const isDark = settings.theme === 'dark' || (settings.theme === 'system' && nativeTheme.shouldUseDarkColors);
-  const palette = BG_COLORS[settings.colorTheme] || BG_COLORS.warm;
-
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
     minWidth: 600,
     minHeight: 400,
     show: false,
-    backgroundColor: isDark ? palette.dark : palette.light,
+    backgroundColor: getWindowBackgroundColor(),
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 16, y: 16 },
     webPreferences: {
@@ -150,7 +138,11 @@ app.on('second-instance', async (_event, argv) => {
   }
 
   try {
-    await queueOrOpenPath(cliPath);
+    if (hasOpenedAnyPath) {
+      await openPathInNewWindow(cliPath);
+    } else {
+      await queueOrOpenPath(cliPath);
+    }
   } catch {
     // Ignore invalid path arguments
   }
@@ -264,7 +256,11 @@ app.on('activate', () => {
 app.on('open-file', async (event, filePath) => {
   event.preventDefault();
   try {
-    await queueOrOpenPath(filePath);
+    if (hasOpenedAnyPath) {
+      await openPathInNewWindow(filePath);
+    } else {
+      await queueOrOpenPath(filePath);
+    }
   } catch {
     // File/directory can't be read
   }
@@ -274,6 +270,7 @@ let hasFileOpen = false;
 
 ipcMain.handle('menu:set-has-file', (_event, hasFile: unknown) => {
   const value = Boolean(hasFile);
+  if (value) hasOpenedAnyPath = true;
   if (value !== hasFileOpen) {
     hasFileOpen = value;
     buildMenu(sendMenuEvent, hasFileOpen);

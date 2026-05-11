@@ -1,8 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  checkPendingOpen: () => ipcRenderer.invoke('window:is-pending-open'),
   // File operations
   openDialog: () => ipcRenderer.invoke('open:dialog'),
+  openDialogInNewWindow: () => ipcRenderer.invoke('open:dialog-in-new-window'),
   openFileDialog: () => ipcRenderer.invoke('file:open-dialog'),
   openDirDialog: () => ipcRenderer.invoke('dir:open-dialog'),
   readFile: (filePath: string) => ipcRenderer.invoke('file:read', filePath),
@@ -34,7 +36,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Finder / search
   showItemInFolder: (filePath: string) => ipcRenderer.invoke('file:show-in-folder', filePath),
   openInNewWindow: (filePath: string) => ipcRenderer.invoke('file:open-new-window', filePath),
-  searchEverything: (query: string) => ipcRenderer.invoke('search:everything', query),
+  searchEverything: (query: string, rootPath: string) => ipcRenderer.invoke('search:everything', query, rootPath),
 
   // Export
   exportPDF: (opts: { html: string; title: string }) => ipcRenderer.invoke('export:pdf', opts),
@@ -43,6 +45,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Settings
   getSettings: () => ipcRenderer.invoke('settings:get'),
+  getSettingsSync: () => ipcRenderer.sendSync('settings:get-sync'),
   setSetting: (key: string, value: unknown) => ipcRenderer.invoke('settings:set', key, value),
 
   // System
@@ -89,6 +92,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getUpdateStatus: () => ipcRenderer.invoke('update:get-status'),
   installUpdate: () => ipcRenderer.invoke('update:install'),
   skipUpdate: (version: string) => ipcRenderer.invoke('update:skip', version),
+  getSkippedVersion: () => ipcRenderer.invoke('update:get-skipped-version'),
   onUpdateReady: (callback: (info: { version: string; notes: string | null }) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, info: { version: string; notes: string | null }) => callback(info);
     ipcRenderer.on('update:ready', handler);
