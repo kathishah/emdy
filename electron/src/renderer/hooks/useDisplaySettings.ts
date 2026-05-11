@@ -15,7 +15,7 @@ function resolveAppearance(theme: string): 'light' | 'dark' {
 }
 
 function normalizeContentWidth(value: unknown): ContentWidth {
-  return value === 'wide' ? 'wide' : 'default';
+  return value === 'default' ? 'default' : 'wide';
 }
 
 export function useDisplaySettings() {

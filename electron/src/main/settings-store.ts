@@ -15,7 +15,7 @@ const defaults: Settings = {
   theme: 'system',
   colorTheme: 'warm',
   zoom: 1.0,
-  contentWidth: 'default',
+  contentWidth: 'wide',
 };
 
 const settingsPath = path.join(app.getPath('userData'), 'settings.json');
