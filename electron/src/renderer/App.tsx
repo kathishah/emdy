@@ -21,7 +21,7 @@ import { useDisplaySettings } from './hooks/useDisplaySettings';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useFileWatcher } from './hooks/useFileWatcher';
 import type { FileEntry, NudgeState, OutlineHeading } from './lib/types';
-import { CONTENT_WIDTHS } from './lib/types';
+import { DEFAULT_CONTENT_WIDTH } from './lib/types';
 import { perfMark, perfMeasure } from './lib/perf';
 
 type FindMode = 'multi-persistent' | 'zero' | 'over-cap';
@@ -715,9 +715,12 @@ export function App() {
     'var(--font-mono)';
 
   const markdownStyle = useMemo(() => ({
+    width: '100%',
     fontFamily: fontFamilyVar,
     fontSize: `${display.zoom}rem`,
-    maxWidth: `min(${CONTENT_WIDTHS[display.contentWidth] * display.zoom}px, 100%)`,
+    maxWidth: display.contentWidth === 'wide'
+      ? '100%'
+      : `min(${DEFAULT_CONTENT_WIDTH * display.zoom}px, 100%)`,
   }), [fontFamilyVar, display.zoom, display.contentWidth]);
 
   const renderContent = () => {

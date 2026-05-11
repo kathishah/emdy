@@ -10,10 +10,7 @@ export type AppTheme = 'light' | 'dark' | 'system';
 export type ColorThemeName = 'warm' | 'cool' | 'neutral' | 'fresh' | 'neon';
 export type ContentWidth = 'default' | 'wide';
 
-export const CONTENT_WIDTHS: Record<ContentWidth, number> = {
-  default: 680,
-  wide: 960,
-};
+export const DEFAULT_CONTENT_WIDTH = 680;
 
 export interface DisplaySettings {
   fontFamily: FontFamily;

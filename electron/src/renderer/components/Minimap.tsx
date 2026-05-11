@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { perfMark, perfMeasure } from '../lib/perf';
-import { CONTENT_WIDTHS, type ContentWidth } from '../lib/types';
+import { DEFAULT_CONTENT_WIDTH, type ContentWidth } from '../lib/types';
 
 interface MinimapProps {
   visible: boolean;
@@ -32,11 +32,6 @@ export function Minimap({
   const [viewportReady, setViewportReady] = useState(false);
   const [ticks, setTicks] = useState<TickInfo[]>([]);
   const isDragging = useRef(false);
-
-  // Clone at the content-width reference (fixed per setting). Clone never re-wraps
-  // based on real window width — wrapping and visual positions are stable. Match ticks
-  // are read from the clone's own <mark> elements so they always land on cloned text.
-  const refWidth = CONTENT_WIDTHS[contentWidth] ?? CONTENT_WIDTHS.wide;
 
   const readTicksFromClone = useCallback(() => {
     const clone = cloneRef.current;
@@ -83,6 +78,10 @@ export function Minimap({
       - parseFloat(minimapStyle.paddingRight);
     if (minimapInnerWidth <= 0) return;
 
+    const measuredWidth = markdownBody.getBoundingClientRect().width || markdownBody.clientWidth;
+    const refWidth = contentWidth === 'wide' && measuredWidth > 0
+      ? measuredWidth
+      : DEFAULT_CONTENT_WIDTH;
     const scale = minimapInnerWidth / refWidth;
 
     clone.style.transform = `scale(${scale})`;
@@ -98,7 +97,7 @@ export function Minimap({
 
     readTicksFromClone();
     perfMeasure('minimap-sync', 'minimap-sync-start');
-  }, [contentRef, refWidth, readTicksFromClone]);
+  }, [contentRef, contentWidth, readTicksFromClone]);
 
   const syncViewport = useCallback(() => {
     const container = scrollContainerRef.current;
