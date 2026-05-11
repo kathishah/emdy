@@ -36,7 +36,7 @@ export function Minimap({
   // Clone at the content-width reference (fixed per setting). Clone never re-wraps
   // based on real window width — wrapping and visual positions are stable. Match ticks
   // are read from the clone's own <mark> elements so they always land on cloned text.
-  const refWidth = CONTENT_WIDTHS[contentWidth];
+  const refWidth = CONTENT_WIDTHS[contentWidth] ?? CONTENT_WIDTHS.default;
 
   const readTicksFromClone = useCallback(() => {
     const clone = cloneRef.current;

@@ -14,6 +14,10 @@ function resolveAppearance(theme: string): 'light' | 'dark' {
   return theme === 'dark' ? 'dark' : 'light';
 }
 
+function normalizeContentWidth(value: unknown): ContentWidth {
+  return value === 'wide' ? 'wide' : 'default';
+}
+
 export function useDisplaySettings() {
   const [settings, setSettings] = useState<DisplaySettings>(() => {
     let saved: Partial<DisplaySettings> = {};
@@ -27,7 +31,7 @@ export function useDisplaySettings() {
       theme: saved.theme || 'system',
       colorTheme: saved.colorTheme || 'warm',
       zoom: saved.zoom || 1.0,
-      contentWidth: saved.contentWidth || 'default',
+      contentWidth: normalizeContentWidth(saved.contentWidth),
     };
     // Apply theme synchronously so the first paint uses the correct colors
     applyTheme(next.colorTheme, resolveAppearance(next.theme));
@@ -51,7 +55,7 @@ export function useDisplaySettings() {
           theme: saved.theme || 'system',
           colorTheme: saved.colorTheme || 'warm',
           zoom: saved.zoom || 1.0,
-          contentWidth: saved.contentWidth || 'default',
+          contentWidth: normalizeContentWidth(saved.contentWidth),
         };
         if (
           prev.fontFamily === next.fontFamily &&
