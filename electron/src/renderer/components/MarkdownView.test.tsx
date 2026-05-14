@@ -1,10 +1,27 @@
 import React, { createRef } from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, waitFor, act } from '@testing-library/react';
 import { MarkdownView, type MarkdownViewHandle, type HighlightState } from './MarkdownView';
 import { warm } from '../lib/color-themes';
 
+const mermaidMocks = vi.hoisted(() => ({
+  initialize: vi.fn(),
+  render: vi.fn(),
+}));
+
+vi.mock('mermaid', () => ({
+  default: mermaidMocks,
+}));
+
 const colors = warm.light;
+
+beforeEach(() => {
+  mermaidMocks.initialize.mockClear();
+  mermaidMocks.render.mockReset();
+  mermaidMocks.render.mockResolvedValue({
+    svg: '<svg viewBox="0 0 100 50" width="100%" style="max-width: 100px;"><text>Diagram</text></svg>',
+  });
+});
 
 function setup(initialHighlight: HighlightState | null = null, onMatchesChanged = vi.fn()) {
   const ref = createRef<MarkdownViewHandle>();
@@ -128,5 +145,52 @@ describe('MarkdownView highlight integration', () => {
     });
     // Content renders as one block (a single paragraph). Line 1 → block 0 → first match.
     expect(ref.current?.focusMatchAtLine(1)).toBe(0);
+  });
+});
+
+describe('MarkdownView Mermaid integration', () => {
+  it('renders mermaid fences as diagrams', async () => {
+    const { container } = render(
+      <MarkdownView
+        content={'```mermaid\nsequenceDiagram\nAlice->>Bob: Hello\n```'}
+        colors={colors}
+      />
+    );
+
+    await waitFor(() => {
+      expect(container.querySelector('.mermaid-diagram svg')).toBeInTheDocument();
+    });
+
+    expect(mermaidMocks.initialize).toHaveBeenCalledWith(expect.objectContaining({
+      startOnLoad: false,
+      securityLevel: 'strict',
+      theme: 'base',
+    }));
+    expect(mermaidMocks.render).toHaveBeenCalledWith(
+      expect.stringMatching(/^emdy-mermaid-/),
+      'sequenceDiagram\nAlice->>Bob: Hello'
+    );
+    expect(container.querySelector('.code-block-wrapper')).toBeNull();
+
+    const svg = container.querySelector('.mermaid-diagram svg');
+    expect(svg?.getAttribute('width')).toBe('100');
+    expect(svg?.getAttribute('height')).toBe('50');
+    expect(svg?.getAttribute('style') ?? '').not.toContain('max-width');
+  });
+
+  it('falls back to the source block when mermaid rendering fails', async () => {
+    mermaidMocks.render.mockRejectedValueOnce(new Error('bad diagram'));
+
+    const { container } = render(
+      <MarkdownView
+        content={'```mermaid\nsequenceDiagram\nAlice--Bob\n```'}
+        colors={colors}
+      />
+    );
+
+    await waitFor(() => {
+      expect(container.querySelector('.mermaid-error-message')).toHaveTextContent('bad diagram');
+    });
+    expect(container.querySelector('.code-block-wrapper')).toBeInTheDocument();
   });
 });

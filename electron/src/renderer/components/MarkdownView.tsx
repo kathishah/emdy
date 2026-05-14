@@ -1,8 +1,9 @@
-import React, { useMemo, useState, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useId } from 'react';
 import { Copy, Check } from 'lucide-react';
 import Markdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import type { MermaidConfig } from 'mermaid';
 import { buildPrismTheme } from '../lib/prism-theme';
 import type { ColorScale } from '../lib/color-themes';
 import { findMatches, clearMatches } from '../lib/find-walker';
@@ -10,6 +11,15 @@ import { findScrollParent } from '../lib/find-scroller';
 
 const REMARK_PLUGINS = [remarkGfm];
 const MemoMarkdown = React.memo(Markdown);
+type MermaidModule = typeof import('mermaid');
+
+let mermaidModulePromise: Promise<MermaidModule> | null = null;
+let mermaidRenderCounter = 0;
+
+function loadMermaid() {
+  mermaidModulePromise ??= import('mermaid');
+  return mermaidModulePromise;
+}
 
 export type HighlightMode = 'multi-persistent' | 'none';
 
@@ -54,6 +64,82 @@ function slugifyHeading(text: string): string {
 
 const MAX_MATCHES = 1000;
 const LANGUAGE_PATTERN = /language-(\w+)/;
+const MERMAID_FONT_FAMILY = 'IBM Plex Sans, -apple-system, sans-serif';
+
+function buildMermaidConfig(colors: ColorScale): MermaidConfig {
+  return {
+    startOnLoad: false,
+    securityLevel: 'strict',
+    secure: ['securityLevel', 'startOnLoad', 'maxTextSize', 'maxEdges', 'htmlLabels'],
+    theme: 'base',
+    htmlLabels: false,
+    fontFamily: MERMAID_FONT_FAMILY,
+    themeVariables: {
+      background: colors.bgContent,
+      mainBkg: colors.bgContent,
+      primaryColor: colors.bgSecondary,
+      primaryTextColor: colors.textPrimary,
+      primaryBorderColor: colors.border,
+      secondaryColor: colors.bgCode,
+      secondaryTextColor: colors.textPrimary,
+      tertiaryColor: colors.bgTertiary,
+      tertiaryTextColor: colors.textPrimary,
+      textColor: colors.textPrimary,
+      lineColor: colors.border,
+      border1: colors.border,
+      border2: colors.borderSubtle,
+      actorBkg: colors.bgContent,
+      actorBorder: colors.border,
+      actorTextColor: colors.textPrimary,
+      actorLineColor: colors.border,
+      activationBkgColor: colors.bgTertiary,
+      activationBorderColor: colors.border,
+      signalColor: colors.textSecondary,
+      signalTextColor: colors.textPrimary,
+      labelBoxBkgColor: colors.bgSecondary,
+      labelBoxBorderColor: colors.border,
+      labelTextColor: colors.textPrimary,
+      loopTextColor: colors.textSecondary,
+      noteBkgColor: colors.bgSecondary,
+      noteTextColor: colors.textPrimary,
+      noteBorderColor: colors.border,
+      fontFamily: MERMAID_FONT_FAMILY,
+    },
+  };
+}
+
+function getMermaidRenderId(baseId: string): string {
+  mermaidRenderCounter += 1;
+  return `${baseId}-${mermaidRenderCounter}`;
+}
+
+function formatMermaidError(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'string' && error.trim()) return error;
+  return 'Unknown Mermaid error';
+}
+
+function normalizeMermaidSvg(svg: string): string {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svg, 'image/svg+xml');
+  const svgEl = doc.documentElement;
+  const viewBox = svgEl.getAttribute('viewBox')?.split(/\s+/).map(Number);
+
+  if (viewBox?.length === 4 && viewBox.every(Number.isFinite)) {
+    const [, , width, height] = viewBox;
+    svgEl.setAttribute('width', String(Math.ceil(width)));
+    svgEl.setAttribute('height', String(Math.ceil(height)));
+    const existingStyle = svgEl.getAttribute('style') || '';
+    const styleWithoutMaxWidth = existingStyle.replace(/max-width\s*:\s*[^;]+;?/i, '').trim();
+    if (styleWithoutMaxWidth) {
+      svgEl.setAttribute('style', styleWithoutMaxWidth);
+    } else {
+      svgEl.removeAttribute('style');
+    }
+  }
+
+  return new XMLSerializer().serializeToString(svgEl);
+}
 
 export const MarkdownView = React.memo(
   React.forwardRef<MarkdownViewHandle, MarkdownViewProps>(function MarkdownView(
@@ -195,6 +281,11 @@ export const MarkdownView = React.memo(
           const match = (className || '').match(LANGUAGE_PATTERN);
           const codeString = String(children).replace(/\n$/, '');
           if (match) {
+            if (match[1].toLowerCase() === 'mermaid') {
+              return (
+                <MermaidDiagram source={codeString} colors={colors} codeTheme={codeTheme} />
+              );
+            }
             return (
               <CodeBlock language={match[1]} codeTheme={codeTheme}>
                 {codeString}
@@ -245,7 +336,7 @@ export const MarkdownView = React.memo(
         h5: createHeading(5),
         h6: createHeading(6),
       };
-    }, [filePath, codeTheme, content]);
+    }, [filePath, codeTheme, colors, content]);
 
     return (
       <div className="markdown-view" style={style} ref={contentRef}>
@@ -260,6 +351,89 @@ export const MarkdownView = React.memo(
 );
 
 const MAX_HIGHLIGHTED_LINES = 200;
+
+function CopyButton({ copied, onCopy, title }: {
+  copied: boolean;
+  onCopy: () => void;
+  title: string;
+}) {
+  return (
+    <button className="code-block-copy" onClick={onCopy} title={title} aria-label={title}>
+      {copied ? <Check size={14} strokeWidth={1.5} /> : <Copy size={14} strokeWidth={1.5} />}
+    </button>
+  );
+}
+
+function MermaidDiagram({ source, colors, codeTheme }: {
+  source: string;
+  colors: ColorScale;
+  codeTheme: Record<string, React.CSSProperties>;
+}) {
+  const rawId = useId();
+  const baseId = useMemo(() => `emdy-mermaid-${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`, [rawId]);
+  const config = useMemo(() => buildMermaidConfig(colors), [colors]);
+  const [svg, setSvg] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSvg(null);
+    setError(null);
+
+    async function renderDiagram() {
+      try {
+        const { default: mermaid } = await loadMermaid();
+        mermaid.initialize(config);
+        const result = await mermaid.render(getMermaidRenderId(baseId), source);
+        if (!cancelled) {
+          setSvg(normalizeMermaidSvg(result.svg));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(formatMermaidError(err));
+        }
+      }
+    }
+
+    void renderDiagram();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [baseId, config, source]);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(source);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [source]);
+
+  if (error) {
+    return (
+      <>
+        <p className="mermaid-error-message" role="status">
+          Could not render Mermaid diagram: {error}
+        </p>
+        <CodeBlock language="mermaid" codeTheme={codeTheme}>
+          {source}
+        </CodeBlock>
+      </>
+    );
+  }
+
+  return (
+    <div className="mermaid-block" aria-busy={!svg}>
+      <CopyButton copied={copied} onCopy={handleCopy} title="Copy diagram source" />
+      {svg && (
+        <div
+          className="mermaid-diagram"
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+      )}
+    </div>
+  );
+}
 
 function CodeBlock({ language, codeTheme, children }: {
   language: string;
@@ -283,9 +457,7 @@ function CodeBlock({ language, codeTheme, children }: {
 
   return (
     <div className="code-block-wrapper">
-      <button className="code-block-copy" onClick={handleCopy} title="Copy code" aria-label="Copy code">
-        {copied ? <Check size={14} strokeWidth={1.5} /> : <Copy size={14} strokeWidth={1.5} />}
-      </button>
+      <CopyButton copied={copied} onCopy={handleCopy} title="Copy code" />
       <SyntaxHighlighter
         style={codeTheme}
         language={language}

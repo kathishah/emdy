@@ -1518,6 +1518,7 @@ input:focus:not(:focus-visible),
 }
 
 .code-block-wrapper::-webkit-scrollbar { width: 0; height: 0; }
+.mermaid-block::-webkit-scrollbar { width: 0; height: 0; }
 .markdown-body pre::-webkit-scrollbar { width: 0; height: 0; }
 
 .code-block-copy {
@@ -1538,7 +1539,8 @@ input:focus:not(:focus-visible),
   transition: opacity var(--transition-fast);
 }
 
-.code-block-wrapper:hover .code-block-copy { opacity: 1; }
+.code-block-wrapper:hover .code-block-copy,
+.mermaid-block:hover .code-block-copy { opacity: 1; }
 .code-block-copy:hover { color: var(--text-primary); background: var(--border); }
 
 .code-block-show-all {
@@ -1563,6 +1565,35 @@ input:focus:not(:focus-visible),
 }
 
 .markdown-body pre code { background: none; padding: 0; border-radius: 0; color: inherit; }
+
+.mermaid-block {
+  position: relative;
+  max-width: 100%;
+  min-height: var(--space-20);
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  background: var(--bg-code);
+  border: var(--space-px) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.mermaid-diagram {
+  width: 100%;
+}
+
+.mermaid-diagram svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-error-message {
+  margin-bottom: var(--space-2);
+  color: var(--error);
+  font-size: var(--fs-sm);
+}
 
 .markdown-body blockquote {
   border-left: var(--space-half) solid var(--border);
