@@ -27,7 +27,7 @@ Emdy is a reader, not an editor. There is no Markdown editing on purpose.
 ## Build from source
 
 ```bash
-git clone https://github.com/ghaida/emdy.git
+git clone https://github.com/kathishah/emdy.git
 cd emdy/electron
 npm install
 npm start          # dev with HMR
