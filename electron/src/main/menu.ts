@@ -164,6 +164,10 @@ export function buildMenu(sendEvent: MenuCallback, hasFile = false) {
     {
       label: 'Window',
       submenu: [
+        ...(isMac ? [
+          { role: 'close' as const },
+          { type: 'separator' as const },
+        ] : []),
         { role: 'minimize' as const },
         { role: 'zoom' as const },
         ...(isMac ? [

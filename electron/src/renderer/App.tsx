@@ -536,6 +536,7 @@ export function App() {
       setActiveOutlineId(null);
       return;
     }
+    if (pendingOpen !== false) return;
 
     let frame = requestAnimationFrame(syncOutlineHeadings);
     const contentNode = contentRef.current;
@@ -554,7 +555,7 @@ export function App() {
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [content, syncOutlineHeadings]);
+  }, [content, pendingOpen, syncOutlineHeadings]);
 
   const handleOutlineSelect = useCallback((id: string) => {
     const container = scrollContainerRef.current;
