@@ -8,6 +8,7 @@ import { buildPrismTheme } from '../lib/prism-theme';
 import type { ColorScale } from '../lib/color-themes';
 import { findMatches, clearMatches } from '../lib/find-walker';
 import { findScrollParent } from '../lib/find-scroller';
+import { classifyLink } from '../lib/link-target';
 
 const REMARK_PLUGINS = [remarkGfm];
 const MemoMarkdown = React.memo(Markdown);
@@ -51,6 +52,13 @@ function getNodeText(node: React.ReactNode): string {
   if (Array.isArray(node)) return node.map(getNodeText).join('');
   if (React.isValidElement<{ children?: React.ReactNode }>(node)) return getNodeText(node.props.children);
   return '';
+}
+
+function scrollToAnchor(id: string) {
+  const el = document.getElementById(id) ?? document.getElementById(id.toLowerCase());
+  if (!el) return;
+  const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ block: 'start', behavior: prefersReducedMotion ? 'auto' : 'smooth' });
 }
 
 function slugifyHeading(text: string): string {
@@ -304,9 +312,17 @@ export const MarkdownView = React.memo(
               href={href}
               {...props}
               onClick={(e) => {
-                if (href) {
-                  e.preventDefault();
-                  window.electronAPI.openExternal(href);
+                if (!href) return;
+                e.preventDefault();
+                const target = classifyLink(href, filePath);
+                if (target.kind === 'external') {
+                  window.electronAPI.openExternal(target.url);
+                } else if (target.kind === 'anchor') {
+                  scrollToAnchor(target.id);
+                } else if (target.kind === 'file') {
+                  window.electronAPI.openInNewWindow(target.path).catch(() => {
+                    // Missing file or path outside the opened folder — nothing to open
+                  });
                 }
               }}
             >
