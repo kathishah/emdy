@@ -1,7 +1,7 @@
 # File Navigation Specs (links, back/forward history)
 
 **Date:** 2026-11-20
-**Status:** product/UX spec. **Decisions 1-4 confirmed by the USER (2026-11-20); no code written yet.** This document is the *what*. The *how* (phases, tasks, rollout) will go in `2026-11-20-file-navigation-implementation-plan.md`, to be written after the USER approves this spec.
+**Status:** product/UX spec **plus implementation plan (§11-§15, same entry).** **Decisions 1-4 confirmed by the USER (2026-11-20); the plan is written and awaiting USER approval; no feature code written yet.** §1-§10 are the *what*; §11-§15 are the *how* (test-first tasks, verification, rollout, status log). If the two disagree, §1-§10 win; fix the plan.
 **Builds on:** kathishah/emdy#1 (merged 2026-11-20, `5087c0d`): clicking a link to another `.md` file opens it in a **new window**, `#heading` links did nothing before it and now scroll. Its helper `classifyLink` (`electron/src/renderer/lib/link-target.ts`) is reused here.
 **Branch:** `feat/file-navigation`
 
@@ -170,3 +170,116 @@ Pure functions: `createHistory(path)`, `saveScroll(h, scrollTop)`, `push(h, path
 | 3 | `#anchor` links count as history entries | USER | 2026-11-20 |
 | 4 | Both toolbar chevrons and keyboard shortcuts plus View menu items | USER | 2026-11-20 |
 | 5 | Specs live in `journal/` as `YYYY-MM-DD-<topic>-specs.md`, modeled on `ik_rabbit/journal/` | USER | 2026-11-20 |
+
+---
+
+## 11. Implementation plan: approach
+
+**Test-first (red, then green).** Four of the five tasks are pure logic or component behavior that is cheap to test, so each starts with tests that fail and ends when they pass. The two pieces that are mostly wiring to Electron (the View menu items and the mouse buttons) have no test harness in this repo, so they are checked manually against §6.
+
+| Piece | Test-first? | Why |
+| --- | --- | --- |
+| `nav-history.ts` (pure reducer) | **Yes** | No React, no Electron; the edge cases (cap, truncate, dead entry) are exactly what tests are good at |
+| `useFileNavigation` hook (new) | **Yes** | Holds the navigate / back / forward / scroll / dead-entry logic; testable with `renderHook` and a mocked `window.electronAPI` |
+| `MarkdownView` click routing | **Yes** | Extends the existing component tests (the link-click block added in #1) |
+| `Toolbar` chevrons | **Yes** | Small new component test |
+| `menu.ts` items, mouse buttons, real windows | **No, manual** | Needs a running Electron app; covered by §6 acceptance criteria 10 and 11 |
+
+**Why a hook.** `App.tsx` has no tests and already owns four copies of "read a file, set content, set path, reset scroll" (`handleOpen`, `handleFileSelect`, `handleFileSelectWithQuery`, `onFileOpen`). Putting the history behavior in `electron/src/renderer/hooks/useFileNavigation.ts` keeps it testable and keeps `App.tsx` thin. `App` passes in the pieces it owns, and the hook does not touch `App` state directly:
+
+```ts
+interface UseFileNavigationArgs {
+  scrollRef: React.RefObject<HTMLElement | null>;      // content scroller
+  readFile: (path: string) => Promise<string>;          // window.electronAPI.readFile
+  show: (path: string, content: string) => void;        // App: setContent + setFilePath + clear error/deleted + closeFind
+  onReadError: () => void;                              // App: toast + announceAssertive
+  announce: (message: string) => void;
+}
+interface FileNavigation {
+  canGoBack: boolean;
+  canGoForward: boolean;
+  navigateTo(path: string, anchor?: string | null): Promise<void>;
+  navigateAnchor(id: string): void;
+  goBack(): Promise<void>;
+  goForward(): Promise<void>;
+  reset(path: string): void;                            // fresh start (§3.1, second table)
+}
+```
+
+**Rules for each red step.**
+- Run the new tests and confirm they fail for the right reason: an assertion failure, not a missing import. Create the module with the exported names as stubs that return their input unchanged first, then write the tests.
+- Commit red and green separately only if the USER asks; the default is one commit per task with the tests included.
+- Never weaken a test to make it pass. If a test is wrong, fix it and say so in the status log.
+
+## 12. Tasks
+
+Run everything from `electron/`. Baseline before starting: `npm test` (73 tests), `npm run lint` (one existing warning at `MarkdownView.test.tsx:58`) and `npx tsc --noEmit` all pass on `main`.
+
+### Task 1: History model (`lib/nav-history.ts`)
+1. **Red:** add `nav-history.test.ts` with the §8 cases: push/back/forward move the index; push after back truncates forward entries; the 100 cap drops the oldest and keeps the index valid; pushing the current path is a no-op; `saveScroll` updates only the current entry; `removeEntry` of an earlier, the current and a later entry keeps a valid index; `canGoBack` / `canGoForward` at both ends; `back` at the start and `forward` at the end return the same history. All fail against the stubs.
+2. **Green:** implement the module (contract in §7.1). Pure and immutable; no mutation of the input.
+3. **Gate:** `npx vitest run src/renderer/lib/nav-history.test.ts` passes.
+
+### Task 2: Navigation hook (`hooks/useFileNavigation.ts`)
+1. **Red:** add `useFileNavigation.test.tsx` using `renderHook`, a fake `readFile` and a plain `<div>` for `scrollRef`:
+   - `navigateTo` saves the live `scrollTop` of the current entry, reads the file, calls `show`, and enables back (acceptance 1).
+   - `goBack` shows the previous file and restores its saved `scrollTop`; `goForward` returns (1).
+   - `navigateAnchor` adds an entry for the same path without calling `readFile`, scrolls the heading into view, and Back returns to the earlier `scrollTop` (3).
+   - `navigateTo(path, 'section')` loads the file and scrolls to the section once it exists (4).
+   - A navigation after `goBack` disables forward (7).
+   - `navigateTo` to the file already shown with no anchor does nothing.
+   - A failed `readFile` calls `onReadError`, leaves the current entry in place and removes the dead entry, so the next Back skips it (9).
+   - Two quick navigations: the earlier read resolving late must not overwrite the later one (stale-result guard, §14 risk 1).
+   - `reset(path)` leaves one entry; back and forward are both disabled (6).
+2. **Green:** implement the hook on top of `nav-history`. Use a navigation counter ref to ignore superseded loads. Retry the anchor scroll on the next animation frame until the element exists, then give up quietly (§4).
+3. **Gate:** the new file passes; `npm test` still passes.
+
+### Task 3: Link click routing (`MarkdownView`)
+1. **Red:** in `MarkdownView.test.tsx`, change the link-click block from #1: plain click on `other.md` calls `onNavigateFile('/notes/guide/other.md', null)` and not `openInNewWindow`; Cmd+click and Ctrl+click call `openInNewWindow` and not `onNavigateFile`; a middle-click (`auxclick`, button 1) calls `openInNewWindow`; `#target-section` calls `onNavigateAnchor('target-section')` and no longer scrolls inside `MarkdownView`; `parent` (`../README.md#setup`) calls `onNavigateFile('/notes/README.md', 'setup')`; external, non-markdown and no-file-open cases are unchanged.
+2. **Green:** add the two props and the modifier / `onAuxClick` handling (§7.2). Move `scrollToAnchor` out so the hook owns scrolling, and delete the unused copy.
+3. **Gate:** `MarkdownView.test.tsx` passes.
+
+### Task 4: Toolbar chevrons
+1. **Red:** new `Toolbar.test.tsx`: both chevrons render with `aria-label` "Back (⌘[)" and "Forward (⌘])"; they are `aria-disabled` when `canGoBack` / `canGoForward` are false and clicking does not call the handler; when enabled, clicking calls `onBack` / `onForward`; they stay rendered at a width below `COLLAPSE_WIDTH` (700). If the existing component can't render in the test as-is, add the smallest stub for what it needs; do not refactor it.
+2. **Green:** add `canGoBack`, `canGoForward`, `onBack`, `onForward` props and the buttons (§5.1), using `ChevronLeft` / `ChevronRight` from `lucide-react` at the toolbar's `ICON` size.
+3. **Gate:** `Toolbar.test.tsx` passes.
+
+### Task 5: Wire it into the app (manual verification)
+No automated test (`App.tsx` is not testable today); the behavior it relies on is covered by Tasks 1-4.
+1. `App.tsx`: call `useFileNavigation`; pass `onNavigateFile` / `onNavigateAnchor` to `MarkdownView`, and the four new props to `Toolbar`. Route `handleFileSelect` and `handleFileSelectWithQuery` through `navigateTo` (keep `applyHighlight`). Call `reset` from `onFileOpen`, `onDirOpen` and the Open dialog path of `handleOpen` (§3.1, second table).
+2. `App.tsx`: handle menu events `nav-back` and `nav-forward`. Optional: a `mouseup` listener for buttons 3 and 4 (§5.4), cleaned up on unmount; drop it if it complicates anything.
+3. `menu.ts`: two View items first, then a separator: Back `CmdOrCtrl+[`, Forward `CmdOrCtrl+]`, sending `nav-back` and `nav-forward`.
+4. **Gate:** `npx tsc --noEmit` and `npm run lint` clean; manual checks for acceptance 1-11 with `npm start`.
+
+### Task 6: Docs
+1. `FORK.md`: add "Link navigation and history" under "Intentional fork differences", with a short description and the key files (`nav-history.ts`, `useFileNavigation.ts`, `MarkdownView.tsx`, `Toolbar.tsx`, `App.tsx`, `menu.ts`), so future upstream merges keep it.
+2. This entry: tick the status log (§15) and record any change to the spec.
+
+## 13. Verification
+
+Automated, from `electron/`: `npm test`, `npm run lint`, `npx tsc --noEmit`, and `npm run package` (a local unsigned build, per `CONTRIBUTING.md`).
+
+Manual, with `npm start`, on a folder of linked markdown files that includes an `#anchor` link, a `file.md#section` link, a link to a deleted file and a link outside the opened folder. Walk through acceptance criteria 1-11 in §6. Test the Cmd+click window once, and confirm the new window's Back is disabled.
+
+## 14. Risks and mitigations
+
+1. **Stale loads.** Two quick clicks: the slower read of the first can land after the second and show the wrong file. Mitigation: a navigation counter in the hook; a result is applied only if it is still the latest. Covered by a Task 2 test.
+2. **Scroll saved too late.** If the scroll position is read after the new content renders, the old entry stores the wrong value. Mitigation: read `scrollTop` before calling `show` (Task 2 test asserts the order).
+3. **Anchor not found.** Headings are created by the renderer after `show`. Mitigation: retry on the next animation frame, then give up quietly (§4).
+4. **`Cmd+[` / `Cmd+]` collisions.** Neither is used by the app today (checked in `menu.ts`). Re-check if upstream adds accelerators when merged.
+5. **Menu is global.** An always-enabled item in a window with no history does nothing; accepted (§9 item 1).
+6. **Listener leaks under React StrictMode.** The optional mouse listener must clean up in the effect's return; the existing renderer code is run in StrictMode in dev.
+7. **Merge conflicts with upstream.** `App.tsx`, `MarkdownView.tsx` and `Toolbar.tsx` are the fork's most-edited files. Mitigation: most new logic lives in two new files; record the touch points in `FORK.md`.
+
+## 15. Rollout, rollback, status log
+
+**Rollout.** This is a desktop app change with no server side and no deploy. Open a PR from `feat/file-navigation` into `kathishah/emdy` `main`, squash-merge as in #1, and let the USER decide when to cut a release. There is no PR-time CI, so the Verification section is the safety net.
+
+**Rollback.** Revert the squash commit. Nothing is persisted (history is in memory only), so there is no data to migrate.
+
+**Status log** (update in place):
+
+| Date | Event |
+| --- | --- |
+| 2026-11-20 | Spec §1-§10 written; USER decisions 1-4 recorded; committed `468a8ac` |
+| 2026-11-20 | Implementation plan §11-§15 written (test-first); awaiting USER approval |
