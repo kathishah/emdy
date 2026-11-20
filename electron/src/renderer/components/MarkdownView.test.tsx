@@ -1,6 +1,6 @@
 import React, { createRef } from 'react';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import { render, waitFor, act } from '@testing-library/react';
+import { render, waitFor, act, fireEvent } from '@testing-library/react';
 import { MarkdownView, type MarkdownViewHandle, type HighlightState } from './MarkdownView';
 import { warm } from '../lib/color-themes';
 
@@ -192,5 +192,86 @@ describe('MarkdownView Mermaid integration', () => {
       expect(container.querySelector('.mermaid-error-message')).toHaveTextContent('bad diagram');
     });
     expect(container.querySelector('.code-block-wrapper')).toBeInTheDocument();
+  });
+});
+
+describe('MarkdownView link clicks', () => {
+  const openExternal = vi.fn();
+  const openInNewWindow = vi.fn();
+
+  beforeEach(() => {
+    openExternal.mockReset();
+    openInNewWindow.mockReset().mockResolvedValue(undefined);
+    (window as unknown as { electronAPI: unknown }).electronAPI = { openExternal, openInNewWindow };
+  });
+
+  function renderLinks(filePath: string | null = '/notes/guide/intro.md') {
+    const content = [
+      '[web](https://example.com)',
+      '[sibling](other.md)',
+      '[parent](../README.md#setup)',
+      '[image](diagram.png)',
+      '[jump](#target-section)',
+      '',
+      '## Target Section',
+    ].join('\n\n');
+    return render(<MarkdownView content={content} colors={colors} filePath={filePath} />);
+  }
+
+  function click(container: HTMLElement, text: string) {
+    const link = Array.from(container.querySelectorAll('a')).find((a) => a.textContent === text);
+    if (!link) throw new Error(`link not found: ${text}`);
+    // fireEvent returns false when the default action was prevented
+    return fireEvent.click(link);
+  }
+
+  it('opens http(s) links externally', () => {
+    const { container } = renderLinks();
+    expect(click(container, 'web')).toBe(false);
+    expect(openExternal).toHaveBeenCalledWith('https://example.com');
+    expect(openInNewWindow).not.toHaveBeenCalled();
+  });
+
+  it('opens relative markdown links in a new window, resolved against the current file', () => {
+    const { container } = renderLinks();
+    expect(click(container, 'sibling')).toBe(false);
+    expect(openInNewWindow).toHaveBeenCalledWith('/notes/guide/other.md');
+    click(container, 'parent');
+    expect(openInNewWindow).toHaveBeenLastCalledWith('/notes/README.md');
+    expect(openExternal).not.toHaveBeenCalled();
+  });
+
+  it('does nothing for non-markdown targets but still blocks navigation', () => {
+    const { container } = renderLinks();
+    expect(click(container, 'image')).toBe(false);
+    expect(openInNewWindow).not.toHaveBeenCalled();
+    expect(openExternal).not.toHaveBeenCalled();
+  });
+
+  it('ignores relative file links when no file is open', () => {
+    const { container } = renderLinks(null);
+    click(container, 'sibling');
+    expect(openInNewWindow).not.toHaveBeenCalled();
+  });
+
+  it('scrolls to the heading for #anchor links without opening a window', () => {
+    const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const { container } = renderLinks();
+    click(container, 'jump');
+    const target = container.querySelector('#target-section');
+    expect(target).not.toBeNull();
+    expect(scrollSpy).toHaveBeenCalled();
+    expect(scrollSpy.mock.instances.at(-1)).toBe(target);
+    expect(openInNewWindow).not.toHaveBeenCalled();
+    expect(openExternal).not.toHaveBeenCalled();
+    scrollSpy.mockRestore();
+  });
+
+  it('swallows a rejected open (missing file or path outside allowed folders)', async () => {
+    openInNewWindow.mockRejectedValueOnce(new Error('Access denied'));
+    const { container } = renderLinks();
+    click(container, 'sibling');
+    await Promise.resolve();
+    expect(openInNewWindow).toHaveBeenCalledTimes(1);
   });
 });
