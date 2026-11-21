@@ -198,14 +198,24 @@ describe('MarkdownView Mermaid integration', () => {
 describe('MarkdownView link clicks', () => {
   const openExternal = vi.fn();
   const openInNewWindow = vi.fn();
+  const onNavigateFile = vi.fn();
+  const onNavigateAnchor = vi.fn();
 
   beforeEach(() => {
     openExternal.mockReset();
     openInNewWindow.mockReset().mockResolvedValue(undefined);
+    onNavigateFile.mockReset();
+    onNavigateAnchor.mockReset();
     (window as unknown as { electronAPI: unknown }).electronAPI = { openExternal, openInNewWindow };
   });
 
-  function renderLinks(filePath: string | null = '/notes/guide/intro.md') {
+  function renderLinks(
+    filePath: string | null = '/notes/guide/intro.md',
+    handlers: { onNavigateFile?: typeof onNavigateFile; onNavigateAnchor?: typeof onNavigateAnchor } = {
+      onNavigateFile,
+      onNavigateAnchor,
+    }
+  ) {
     const content = [
       '[web](https://example.com)',
       '[sibling](other.md)',
@@ -215,35 +225,81 @@ describe('MarkdownView link clicks', () => {
       '',
       '## Target Section',
     ].join('\n\n');
-    return render(<MarkdownView content={content} colors={colors} filePath={filePath} />);
+    return render(<MarkdownView content={content} colors={colors} filePath={filePath} {...handlers} />);
   }
 
-  function click(container: HTMLElement, text: string) {
+  function getLink(container: HTMLElement, text: string): HTMLElement {
     const link = Array.from(container.querySelectorAll('a')).find((a) => a.textContent === text);
     if (!link) throw new Error(`link not found: ${text}`);
+    return link;
+  }
+
+  function click(container: HTMLElement, text: string, init?: MouseEventInit) {
     // fireEvent returns false when the default action was prevented
-    return fireEvent.click(link);
+    return fireEvent.click(getLink(container, text), init);
+  }
+
+  function auxClick(el: HTMLElement, button: number) {
+    fireEvent(el, new MouseEvent('auxclick', { bubbles: true, cancelable: true, button }));
   }
 
   it('opens http(s) links externally', () => {
     const { container } = renderLinks();
     expect(click(container, 'web')).toBe(false);
     expect(openExternal).toHaveBeenCalledWith('https://example.com');
+    expect(onNavigateFile).not.toHaveBeenCalled();
     expect(openInNewWindow).not.toHaveBeenCalled();
   });
 
-  it('opens relative markdown links in a new window, resolved against the current file', () => {
+  it('plain click on a relative markdown link navigates in the same window', () => {
     const { container } = renderLinks();
     expect(click(container, 'sibling')).toBe(false);
-    expect(openInNewWindow).toHaveBeenCalledWith('/notes/guide/other.md');
-    click(container, 'parent');
-    expect(openInNewWindow).toHaveBeenLastCalledWith('/notes/README.md');
+    expect(onNavigateFile).toHaveBeenCalledWith('/notes/guide/other.md', null);
+    expect(openInNewWindow).not.toHaveBeenCalled();
     expect(openExternal).not.toHaveBeenCalled();
+  });
+
+  it('passes the fragment of a file link along', () => {
+    const { container } = renderLinks();
+    click(container, 'parent');
+    expect(onNavigateFile).toHaveBeenCalledWith('/notes/README.md', 'setup');
+  });
+
+  it('Cmd+click and Ctrl+click open the file in a new window instead', () => {
+    const { container } = renderLinks();
+    expect(click(container, 'sibling', { metaKey: true })).toBe(false);
+    expect(openInNewWindow).toHaveBeenLastCalledWith('/notes/guide/other.md');
+    click(container, 'parent', { ctrlKey: true });
+    expect(openInNewWindow).toHaveBeenLastCalledWith('/notes/README.md');
+    expect(openInNewWindow).toHaveBeenCalledTimes(2);
+    expect(onNavigateFile).not.toHaveBeenCalled();
+  });
+
+  it('middle-click opens the file in a new window', () => {
+    const { container } = renderLinks();
+    auxClick(getLink(container, 'sibling'), 1);
+    expect(openInNewWindow).toHaveBeenCalledWith('/notes/guide/other.md');
+    expect(onNavigateFile).not.toHaveBeenCalled();
+  });
+
+  it('other auxiliary buttons do nothing', () => {
+    const { container } = renderLinks();
+    auxClick(getLink(container, 'sibling'), 2);
+    expect(openInNewWindow).not.toHaveBeenCalled();
+    expect(onNavigateFile).not.toHaveBeenCalled();
+  });
+
+  it('modifier clicks still open web links externally', () => {
+    const { container } = renderLinks();
+    click(container, 'web', { metaKey: true });
+    expect(openExternal).toHaveBeenCalledWith('https://example.com');
+    expect(openInNewWindow).not.toHaveBeenCalled();
   });
 
   it('does nothing for non-markdown targets but still blocks navigation', () => {
     const { container } = renderLinks();
     expect(click(container, 'image')).toBe(false);
+    expect(onNavigateFile).not.toHaveBeenCalled();
     expect(openInNewWindow).not.toHaveBeenCalled();
     expect(openExternal).not.toHaveBeenCalled();
   });
@@ -251,26 +307,31 @@ describe('MarkdownView link clicks', () => {
   it('ignores relative file links when no file is open', () => {
     const { container } = renderLinks(null);
     click(container, 'sibling');
+    expect(onNavigateFile).not.toHaveBeenCalled();
     expect(openInNewWindow).not.toHaveBeenCalled();
   });
 
-  it('scrolls to the heading for #anchor links without opening a window', () => {
+  it('hands #anchor links to onNavigateAnchor without scrolling itself', () => {
     const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView');
     const { container } = renderLinks();
-    click(container, 'jump');
-    const target = container.querySelector('#target-section');
-    expect(target).not.toBeNull();
-    expect(scrollSpy).toHaveBeenCalled();
-    expect(scrollSpy.mock.instances.at(-1)).toBe(target);
+    expect(click(container, 'jump')).toBe(false);
+    expect(onNavigateAnchor).toHaveBeenCalledWith('target-section');
+    expect(container.querySelector('#target-section')).not.toBeNull();
+    expect(scrollSpy).not.toHaveBeenCalled();
     expect(openInNewWindow).not.toHaveBeenCalled();
-    expect(openExternal).not.toHaveBeenCalled();
     scrollSpy.mockRestore();
+  });
+
+  it('falls back to a new window when no navigation handler is provided', () => {
+    const { container } = renderLinks('/notes/guide/intro.md', {});
+    click(container, 'sibling');
+    expect(openInNewWindow).toHaveBeenCalledWith('/notes/guide/other.md');
   });
 
   it('swallows a rejected open (missing file or path outside allowed folders)', async () => {
     openInNewWindow.mockRejectedValueOnce(new Error('Access denied'));
     const { container } = renderLinks();
-    click(container, 'sibling');
+    click(container, 'sibling', { metaKey: true });
     await Promise.resolve();
     expect(openInNewWindow).toHaveBeenCalledTimes(1);
   });

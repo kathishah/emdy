@@ -92,6 +92,17 @@ export function buildMenu(sendEvent: MenuCallback, hasFile = false) {
       label: 'View',
       submenu: [
         {
+          label: 'Back',
+          accelerator: 'CmdOrCtrl+[',
+          click: () => sendEvent('nav-back'),
+        },
+        {
+          label: 'Forward',
+          accelerator: 'CmdOrCtrl+]',
+          click: () => sendEvent('nav-forward'),
+        },
+        { type: 'separator' as const },
+        {
           label: 'Zoom In',
           accelerator: 'CmdOrCtrl+=',
           click: () => sendEvent('zoom-in'),

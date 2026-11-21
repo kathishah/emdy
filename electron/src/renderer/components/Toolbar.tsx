@@ -13,6 +13,8 @@ import {
   Settings,
   ChevronsRightLeft,
   ChevronsLeftRight,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import type { FontFamily, ContentWidth } from '../lib/types';
 
@@ -44,6 +46,10 @@ interface ToolbarProps {
   onCopyHTML: () => void;
   onOpenSettings: () => void;
   hasContent: boolean;
+  canGoBack: boolean;
+  canGoForward: boolean;
+  onBack: () => void;
+  onForward: () => void;
 }
 
 const fonts: { value: FontFamily; label: string; family: string }[] = [
@@ -77,6 +83,10 @@ export function Toolbar({
   onCopyHTML,
   onOpenSettings,
   hasContent,
+  canGoBack,
+  canGoForward,
+  onBack,
+  onForward,
 }: ToolbarProps) {
   const [fontMenuOpen, setFontMenuOpen] = useState(false);
   const [overflowOpen, setOverflowOpen] = useState(false);
@@ -190,6 +200,30 @@ export function Toolbar({
           >
             <PanelLeft {...ICON} />
           </button>
+        )}
+        {hasContent && (
+          <>
+            <button
+              className="toolbar-btn"
+              onClick={() => { if (canGoBack) onBack(); }}
+              data-tooltip="Back  ⌘["
+              aria-label="Back"
+              aria-disabled={!canGoBack}
+              data-toolbar-btn
+            >
+              <ChevronLeft {...ICON} />
+            </button>
+            <button
+              className="toolbar-btn"
+              onClick={() => { if (canGoForward) onForward(); }}
+              data-tooltip="Forward  ⌘]"
+              aria-label="Forward"
+              aria-disabled={!canGoForward}
+              data-toolbar-btn
+            >
+              <ChevronRight {...ICON} />
+            </button>
+          </>
         )}
         {fileName && filePath && (
           <span
