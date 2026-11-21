@@ -45,6 +45,10 @@ interface MarkdownViewProps {
   contentRef?: React.RefObject<HTMLDivElement | null>;
   highlight?: HighlightState | null;
   onMatchesChanged?: (count: number, isCapped: boolean, positions: number[]) => void;
+  /** Plain click on a link to a markdown file. Without it, the file opens in a new window. */
+  onNavigateFile?: (path: string, anchor: string | null) => void;
+  /** Click on a `#heading` link in the current document. */
+  onNavigateAnchor?: (id: string) => void;
 }
 
 function getNodeText(node: React.ReactNode): string {
@@ -54,11 +58,10 @@ function getNodeText(node: React.ReactNode): string {
   return '';
 }
 
-function scrollToAnchor(id: string) {
-  const el = document.getElementById(id) ?? document.getElementById(id.toLowerCase());
-  if (!el) return;
-  const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  el.scrollIntoView({ block: 'start', behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+function openInNewWindow(path: string) {
+  window.electronAPI.openInNewWindow(path).catch(() => {
+    // Missing file or path outside the opened folder: nothing to open
+  });
 }
 
 function slugifyHeading(text: string): string {
@@ -151,12 +154,15 @@ function normalizeMermaidSvg(svg: string): string {
 
 export const MarkdownView = React.memo(
   React.forwardRef<MarkdownViewHandle, MarkdownViewProps>(function MarkdownView(
-    { content, colors, filePath, style, contentRef, highlight, onMatchesChanged },
+    { content, colors, filePath, style, contentRef, highlight, onMatchesChanged, onNavigateFile, onNavigateAnchor },
     ref
   ) {
     const codeTheme = useMemo(() => buildPrismTheme(colors), [colors]);
     const bodyRef = useRef<HTMLElement | null>(null);
     const matchElementsRef = useRef<HTMLElement[]>([]);
+    // Held in a ref so changing handlers never rebuilds `components` (which would remount the document).
+    const navigationRef = useRef({ onNavigateFile, onNavigateAnchor });
+    navigationRef.current = { onNavigateFile, onNavigateAnchor };
     const onMatchesChangedRef = useRef(onMatchesChanged);
 
     useEffect(() => {
@@ -315,15 +321,26 @@ export const MarkdownView = React.memo(
                 if (!href) return;
                 e.preventDefault();
                 const target = classifyLink(href, filePath);
+                const { onNavigateFile, onNavigateAnchor } = navigationRef.current;
                 if (target.kind === 'external') {
                   window.electronAPI.openExternal(target.url);
                 } else if (target.kind === 'anchor') {
-                  scrollToAnchor(target.id);
+                  onNavigateAnchor?.(target.id);
                 } else if (target.kind === 'file') {
-                  window.electronAPI.openInNewWindow(target.path).catch(() => {
-                    // Missing file or path outside the opened folder — nothing to open
-                  });
+                  if (onNavigateFile && !e.metaKey && !e.ctrlKey) {
+                    onNavigateFile(target.path, target.anchor);
+                  } else {
+                    openInNewWindow(target.path);
+                  }
                 }
+              }}
+              onAuxClick={(e) => {
+                // Middle-click: same as Cmd+click, a new window for files.
+                if (!href || e.button !== 1) return;
+                e.preventDefault();
+                const target = classifyLink(href, filePath);
+                if (target.kind === 'external') window.electronAPI.openExternal(target.url);
+                else if (target.kind === 'file') openInNewWindow(target.path);
               }}
             >
               {children}

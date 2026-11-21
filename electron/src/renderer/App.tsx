@@ -20,6 +20,7 @@ import { useAnnounce } from './hooks/useAnnounce';
 import { useDisplaySettings } from './hooks/useDisplaySettings';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useFileWatcher } from './hooks/useFileWatcher';
+import { useFileNavigation } from './hooks/useFileNavigation';
 import type { FileEntry, NudgeState, OutlineHeading } from './lib/types';
 import { DEFAULT_CONTENT_WIDTH } from './lib/types';
 import { perfMark, perfMeasure } from './lib/perf';
@@ -322,6 +323,42 @@ export function App() {
     window.electronAPI.setMenuHasFile(content !== null);
   }, [content]);
 
+  const showDocument = useCallback((path: string, fileContent: string) => {
+    perfMark('render-start');
+    setContent(fileContent);
+    // Measure render on next frame (after React commits the DOM)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        perfMeasure('render', 'render-start');
+      });
+    });
+    setFilePath(path);
+    setFileDeleted(false);
+    setFileError(null);
+  }, []);
+
+  const readFileForNavigation = useCallback(async (path: string) => {
+    perfMark('file-load-start');
+    const fileContent = await window.electronAPI.readFile(path);
+    perfMeasure('file-load', 'file-load-start');
+    return fileContent;
+  }, []);
+
+  const handleNavigationReadError = useCallback(() => {
+    addToast('Failed to read file', 'error');
+    announceAssertive('Error: could not read file');
+  }, [addToast, announceAssertive]);
+
+  const nav = useFileNavigation({
+    scrollRef: scrollContainerRef,
+    readFile: readFileForNavigation,
+    show: showDocument,
+    onReadError: handleNavigationReadError,
+    onNavigate: closeFind,
+    announce,
+  });
+  const { reset: resetHistory, goBack, goForward } = nav;
+
   const handleOpen = useCallback(async () => {
     try {
       const hasContent = content !== null || dirPath !== null;
@@ -337,6 +374,7 @@ export function App() {
         setFilePath(result.filePath);
         setFileDeleted(false);
         setFileError(null);
+        resetHistory(result.filePath);
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollTop = 0;
         }
@@ -354,6 +392,7 @@ export function App() {
             setFilePath(first);
             setFileDeleted(false);
             setFileError(null);
+            resetHistory(first);
             if (scrollContainerRef.current) {
               scrollContainerRef.current.scrollTop = 0;
             }
@@ -363,54 +402,17 @@ export function App() {
     } catch {
       addToast('Failed to open', 'error');
     }
-  }, [addToast, closeFind, content, dirPath]);
+  }, [addToast, closeFind, content, dirPath, resetHistory]);
 
   const handleFileSelect = useCallback(async (path: string) => {
-    try {
-      perfMark('file-load-start');
-      const fileContent = await window.electronAPI.readFile(path);
-      perfMeasure('file-load', 'file-load-start');
-      perfMark('render-start');
-      setContent(fileContent);
-      // Measure render on next frame (after React commits the DOM)
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          perfMeasure('render', 'render-start');
-        });
-      });
-      setFilePath(path);
-      setFileDeleted(false);
-      setFileError(null);
-      closeFind();
-      // Scroll to top of new file
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTop = 0;
-      }
-    } catch {
-      setFileError('Could not read the file.');
-      addToast('Failed to read file', 'error');
-      announceAssertive('Error: could not read file');
-    }
-  }, [addToast, announceAssertive, closeFind]);
+    await nav.navigateTo(path);
+  }, [nav.navigateTo]);
 
   const handleFileSelectWithQuery = useCallback(
     async (path: string, query: string, lineNumber?: number) => {
       if (path !== filePath) {
-        try {
-          const fileContent = await window.electronAPI.readFile(path);
-          setContent(fileContent);
-          setFilePath(path);
-          setFileDeleted(false);
-          setFileError(null);
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = 0;
-          }
-        } catch {
-          setFileError('Could not read the file.');
-          addToast('Failed to read file', 'error');
-          announceAssertive('Error: could not read file');
-          return;
-        }
+        const navigated = await nav.navigateTo(path);
+        if (!navigated) return;
       }
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -418,7 +420,7 @@ export function App() {
         });
       });
     },
-    [filePath, applyHighlight, addToast, announceAssertive]
+    [filePath, applyHighlight, nav.navigateTo]
   );
 
   const handleExportPDF = useCallback(async () => {
@@ -646,6 +648,8 @@ export function App() {
         case 'zoom-in': display.zoomIn(); break;
         case 'zoom-out': display.zoomOut(); break;
         case 'zoom-reset': display.resetZoom(); break;
+        case 'nav-back': goBack(); break;
+        case 'nav-forward': goForward(); break;
         case 'toggle-sidebar': setSidebarVisible((v) => !v); break;
         case 'toggle-minimap': setMinimapVisible((v) => !v); break;
         case 'font-sans': display.setFontFamily('sans'); break;
@@ -668,6 +672,7 @@ export function App() {
       setFilePath(path);
       setFileDeleted(false);
       setFileError(null);
+      resetHistory(path);
       clearPendingWithMinTime();
       if (scrollContainerRef.current) {
         scrollContainerRef.current.scrollTop = 0;
@@ -691,6 +696,7 @@ export function App() {
             setFilePath(first);
             setFileDeleted(false);
             setFileError(null);
+            resetHistory(first);
             if (scrollContainerRef.current) {
               scrollContainerRef.current.scrollTop = 0;
             }
@@ -704,7 +710,22 @@ export function App() {
     window.electronAPI.notifyRendererReady();
 
     return () => { removeMenu(); removeFileOpen(); removeDirOpen(); };
-  }, [handleOpen, handleExportPDF, display, addToast, closeFind, handleOpenPalette, cycleMatchNext, cycleMatchPrev]);
+  }, [handleOpen, handleExportPDF, display, addToast, closeFind, handleOpenPalette, cycleMatchNext, cycleMatchPrev, resetHistory, goBack, goForward]);
+
+  // Mouse back/forward buttons
+  useEffect(() => {
+    const handleMouseUp = (e: MouseEvent) => {
+      if (e.button === 3) {
+        e.preventDefault();
+        goBack();
+      } else if (e.button === 4) {
+        e.preventDefault();
+        goForward();
+      }
+    };
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => window.removeEventListener('mouseup', handleMouseUp);
+  }, [goBack, goForward]);
 
   // Welcome = nothing loaded at all. Once a folder or file is open, show toolbar.
   const isWelcome = content === null && dirEntries === null;
@@ -793,6 +814,8 @@ export function App() {
               contentRef={contentRef}
               highlight={highlight}
               onMatchesChanged={handleMatchesChanged}
+              onNavigateFile={nav.navigateTo}
+              onNavigateAnchor={nav.navigateAnchor}
             />
           </div>
           <Minimap
@@ -855,6 +878,10 @@ export function App() {
             onCopyHTML={handleCopyHTML}
             onOpenSettings={() => setSettingsVisible(true)}
             hasContent={content !== null}
+            canGoBack={nav.canGoBack}
+            canGoForward={nav.canGoForward}
+            onBack={goBack}
+            onForward={goForward}
           />
         )}
       </div>

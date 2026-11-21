@@ -133,6 +133,16 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
   color: var(--accent);
 }
 
+.toolbar-btn[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.toolbar-btn[aria-disabled='true']:hover {
+  background: transparent;
+  color: var(--text-muted);
+}
+
 .btn-primary {
   border: 2px solid var(--accent);
   background: white;

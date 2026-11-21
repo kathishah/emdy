@@ -56,6 +56,30 @@ Key files:
 - `electron/src/renderer/App.tsx`
 - `electron/src/renderer/lib/types.ts`
 
+### Link navigation and history
+
+- A plain click on a link to another markdown file loads it in the same window;
+  Cmd/Ctrl+click or middle-click opens it in a new window. `#heading` links
+  scroll in place.
+- Each window keeps its own back/forward history (files, sidebar picks,
+  command-palette picks and `#anchor` jumps), with scroll position restored.
+  History is in memory only and capped at 100 entries.
+- Back/forward: toolbar chevrons, View menu (`Cmd+[` / `Cmd+]`) and the mouse
+  back/forward buttons.
+- File access is unchanged: loading still goes through `file:read` and
+  `isPathAllowed`, so links outside the opened folders do nothing but toast.
+- Spec and plan: `journal/2026-11-20-file-navigation-specs.md`.
+
+Key files:
+
+- `electron/src/renderer/lib/nav-history.ts`
+- `electron/src/renderer/lib/link-target.ts`
+- `electron/src/renderer/hooks/useFileNavigation.ts`
+- `electron/src/renderer/components/MarkdownView.tsx`
+- `electron/src/renderer/components/Toolbar.tsx`
+- `electron/src/renderer/App.tsx`
+- `electron/src/main/menu.ts`
+
 ### Contributor dependency setup
 
 - The fork carries dependency/version and override changes for local contributor

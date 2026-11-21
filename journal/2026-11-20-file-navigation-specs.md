@@ -66,7 +66,7 @@ Navigating to the file already shown, with no anchor, does nothing. With an anch
 - A navigation after going back drops the forward entries.
 - History is capped at **100** entries per window; the oldest is dropped first.
 - If the target is the file already shown, only the scroll position changes; the file is not re-read.
-- If an entry's file cannot be read (deleted, moved, or outside the allowed folders): show the existing "Failed to read file" toast, stay on the current entry, and **remove the dead entry** so back does not get stuck on it.
+- If an entry's file cannot be read (deleted, moved, or outside the allowed folders): show the existing "Failed to read file" toast, stay on the current entry, and **remove the dead entry** so back does not get stuck on it. The same applies to a failed forward-navigation and to a sidebar or palette pick: the toast is shown and the document on screen is kept. (Before this change a failed sidebar pick replaced the document with the file-error view.)
 - The find bar closes on navigation, as it does for file select today (`closeFind`).
 - Command-palette highlights are not part of history. Going back lands on the saved scroll position without re-applying them.
 
@@ -85,8 +85,8 @@ Each entry stores `path` and `scrollTop`. Immediately before leaving an entry, t
 ### 5.1 Toolbar
 
 - Back and forward chevron buttons (`ChevronLeft` / `ChevronRight`, same icon size and stroke as the rest of the toolbar), at the left of the toolbar next to the sidebar toggle.
-- Disabled (`aria-disabled`, dimmed, no hover) when there is nowhere to go.
-- Tooltip and `aria-label`: "Back (⌘[)" and "Forward (⌘])".
+- Shown only while a document is open. Disabled (`aria-disabled`, dimmed, no hover, click ignored) when there is nowhere to go; `aria-disabled` rather than `disabled` so they stay in the toolbar's arrow-key navigation.
+- `aria-label` "Back" / "Forward"; tooltip (`data-tooltip`, like the other toolbar buttons) "Back  ⌘[" and "Forward  ⌘]".
 - Not collapsed into the overflow menu at narrow widths (`COLLAPSE_WIDTH` 700): they stay visible.
 
 ### 5.2 Menu and keyboard
@@ -128,12 +128,12 @@ interface NavEntry { path: string; scrollTop: number }
 interface NavHistory { entries: NavEntry[]; index: number }
 ```
 
-Pure functions: `createHistory(path)`, `saveScroll(h, scrollTop)`, `push(h, path)` (truncates forward entries, caps at 100, no-op for the current path), `back(h)`, `forward(h)`, `removeEntry(h, i)`, `canGoBack(h)`, `canGoForward(h)`. No React, no Electron.
+Pure functions: `createHistory(path)`, `current(h)`, `saveScroll(h, scrollTop)`, `push(h, path)` (truncates forward entries, caps at 100; it always adds an entry, including for the same path, which is how a `#anchor` entry is made; the "already on this file" rule lives in the hook), `back(h)`, `forward(h)`, `removeEntry(h, i)`, `canGoBack(h)`, `canGoForward(h)`. No React, no Electron.
 
 ### 7.2 Renderer
 
-- `App.tsx`: keep the history in state beside `filePath`. Add `navigateTo(path, { anchor })`, `navigateAnchor(id)`, `goBack()` and `goForward()`. Route `handleFileSelect` and `handleFileSelectWithQuery` through the same path so the sidebar and palette share the behavior. Handle two new menu events, `nav-back` and `nav-forward`. The initial `onFileOpen` / `onDirOpen` call `createHistory`.
-- `MarkdownView.tsx`: add `onNavigateFile(path, anchor)` and `onNavigateAnchor(id)` props. A plain click calls them; a modifier or middle click calls `openInNewWindow`. Export `scrollToAnchor` so `App` can call it after a file loads.
+- `App.tsx`: call `useFileNavigation` (§11), which owns the history. It exposes `navigateTo(path, anchor?)` (resolves `true` when the file is showing, so a palette pick only applies its highlight after a successful load), `navigateAnchor(id)`, `goBack()` and `goForward()`. Route `handleFileSelect` and `handleFileSelectWithQuery` through the same path so the sidebar and palette share the behavior. Handle two new menu events, `nav-back` and `nav-forward`. The initial `onFileOpen` / `onDirOpen` call `createHistory`.
+- `MarkdownView.tsx`: add optional `onNavigateFile(path, anchor)` and `onNavigateAnchor(id)` props. A plain click calls them; a Cmd/Ctrl click or middle click calls `openInNewWindow`; with no `onNavigateFile` a plain click also falls back to a new window. The handlers are read through a ref so changing them never rebuilds the markdown components. Anchor scrolling moved into the hook (the local `scrollToAnchor` is gone).
 - `Toolbar.tsx`: `canGoBack`, `canGoForward`, `onBack`, `onForward` props and the two buttons.
 - `useFileWatcher` already follows `filePath`; no change.
 
@@ -283,3 +283,9 @@ Manual, with `npm start`, on a folder of linked markdown files that includes an 
 | --- | --- |
 | 2026-11-20 | Spec §1-§10 written; USER decisions 1-4 recorded; committed `468a8ac` |
 | 2026-11-20 | Implementation plan §11-§15 written (test-first); awaiting USER approval |
+| 2026-11-20 | **Plan approved by the USER; implementation started on `feat/file-navigation`** |
+| 2026-11-20 | Tasks 1-4 done test-first (red then green): `nav-history` (15 tests), `useFileNavigation` (15), `MarkdownView` link routing (22 in file), `Toolbar` (7). Task 5 wired in `App.tsx` and `menu.ts` (View > Back/Forward, mouse buttons 3/4). Task 6: `FORK.md` entry. `npm test` 116 passing, `tsc` clean, eslint 0 errors (5 pre-existing warnings). |
+| 2026-11-20 | **End-to-end run on the packaged app** (`electron-forge package`, launched with a debug port and an isolated `--user-data-dir`, driven over CDP with real mouse input; scratch scripts not committed): 21/21 checks pass. Covered: plain click stays in the window; Back/Forward via toolbar restore the exact scroll (1888 before and after); `#anchor` and `other.md#second-part` scroll to the heading and Back restores; Cmd+click opens a second window with its own empty history and leaves the first untouched; Back onto a deleted file toasts, stays put, and the next Back skips it; missing-file and outside-folder links toast and change nothing; mouse Back/Forward buttons work. Also added `src/main/menu.test.ts` (4 tests) for the View menu items and events. |
+| 2026-11-20 | **Not verified end to end:** the native View menu items and `Cmd+[` / `Cmd+]` (macOS denied `osascript` the Accessibility permission, so the menu could not be driven). The menu template and event names are unit tested and the same `goBack` / `goForward` are exercised by the chevrons and mouse buttons; press the shortcuts once in a real window to close this out. The web link click path (`openExternal`) was not clicked, to avoid opening a browser. |
+| 2026-11-20 | **Finding (pre-existing, dev only):** in `npm start` heading ids get a `-2` suffix (the id counter in `MarkdownView` increments twice because React StrictMode renders each heading twice), so `#anchor` links find nothing in dev. Packaged builds are unaffected, which is why the E2E ran on a packaged build. Not changed here; worth a separate fix. |
+| 2026-11-20 | Deviations from the plan, all recorded above: `navigateTo` returns a boolean; `onNavigate` and `announce` args added to the hook; chevrons only render while a document is open; failed reads toast instead of showing the file-error view. |
